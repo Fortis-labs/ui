@@ -1,5 +1,5 @@
-import RenderMultisigRoute from '@/components/RenderMultisigRoute';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import RenderMultisigRoute from '../components/RenderMultisigRoute';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Suspense } from 'react';
 
 const Index = () => {
