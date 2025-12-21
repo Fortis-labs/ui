@@ -17,7 +17,7 @@ import { isPublickey } from '@/lib/isPublickey';
 import { ValidationRules, useSquadForm } from '@/lib/hooks/useSquadForm';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useMultisigAddress } from '@/hooks/useMultisigAddress';
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
 interface MemberAddresses {
   count: number;
@@ -32,7 +32,7 @@ interface CreateSquadFormData {
   createKey: string;
 }
 
-export default function CreateSquadForm({}: {}) {
+export default function CreateSquadForm({ }: {}) {
   const { publicKey, connected, sendTransaction } = useWallet();
 
   const { connection, programId } = useMultisigData();

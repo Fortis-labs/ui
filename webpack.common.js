@@ -20,7 +20,8 @@ module.exports = {
       assert: require.resolve('assert/'),
       util: require.resolve('util/'),
       events: require.resolve('events/'),
-      process: require.resolve('process/browser'),
+      'process/browser': require.resolve('process/browser'),
+      // process: require.resolve('process/browser'),
       buffer: require.resolve('buffer/'),
     },
     alias: {

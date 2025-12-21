@@ -1,6 +1,7 @@
+
 import { useMultisigData } from './useMultisigData';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { AccountInfo, ParsedAccountData, PublicKey, RpcResponseAndContext } from '@solana/web3.js';
+import { type AccountInfo, type ParsedAccountData, PublicKey, type RpcResponseAndContext } from '@solana/web3.js';
 import invariant from 'invariant';
 
 export interface SimplifiedProgramInfo {
