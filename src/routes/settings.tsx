@@ -1,8 +1,8 @@
-import SetProgramIdInput from '@/components/SetProgramIdInput';
-import SetRpcUrlInput from '@/components/SetRpcUrlnput';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import SetProgramIdInput from '../components/SetProgramIdInput';
+import SetRpcUrlInput from '../components/SetRpcUrlnput';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import SetExplorerInput from '../components/SetExplorerInput';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Suspense } from 'react';
 
 const SettingsPage = () => {

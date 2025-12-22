@@ -23,11 +23,13 @@ import { waitForConfirmation } from '../lib/transactionConfirmation';
 type CreateProgramUpgradeInputProps = {
   programInfos: SimplifiedProgramInfo;
   transactionIndex: number;
+  votingDeadline: bigint;
 };
 
 const CreateProgramUpgradeInput = ({
   programInfos,
   transactionIndex,
+  votingDeadline,
 }: CreateProgramUpgradeInputProps) => {
   const queryClient = useQueryClient();
   const wallet = useWallet();

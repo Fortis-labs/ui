@@ -1,10 +1,11 @@
-import ChangeUpgradeAuthorityInput from '@/components/ChangeUpgradeAuthorityInput';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import ChangeUpgradeAuthorityInput from '../components/ChangeUpgradeAuthorityInput';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { address, type Address } from '@solana/kit';
 import { PublicKey } from '@solana/web3.js';
-import { useMultisig } from '@/hooks/useServices';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useMultisig } from '../hooks/useServices';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Suspense, useState } from 'react';
 import { useProgram } from '../hooks/useProgram';
 import CreateProgramUpgradeInput from '../components/CreateProgramUpgradeInput';
@@ -13,6 +14,9 @@ const ProgramsPage = () => {
   const { data: multisigConfig } = useMultisig();
 
   // State for program ID input and validation
+  const [votingDeadlineInput, setVotingDeadlineInput] = useState('');
+  const [votingDeadline, setVotingDeadline] = useState<bigint | null>(null);
+  const [votingDeadlineError, setVotingDeadlineError] = useState('');
   const [programIdInput, setProgramIdInput] = useState('');
   const [programIdError, setProgramIdError] = useState('');
   const [validatedProgramId, setValidatedProgramId] = useState<string | null>(null);
@@ -46,8 +50,10 @@ const ProgramsPage = () => {
     setProgramIdInput('');
     setValidatedProgramId(null);
     setProgramIdError('');
+    setVotingDeadline(null);
+    setVotingDeadlineInput('');
+    setVotingDeadlineError('');
   };
-
   return (
     <ErrorBoundary>
       <Suspense fallback={<div>Loading...</div>}>
@@ -82,7 +88,56 @@ const ProgramsPage = () => {
                     </Button>
                   )}
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Voting Deadline (Unix timestamp, seconds)
+                  </label>
 
+                  <Input
+                    placeholder="e.g. 1735689600"
+                    value={votingDeadlineInput}
+                    onChange={(e) => setVotingDeadlineInput(e.target.value)}
+                    className={votingDeadlineError ? 'border-red-500' : ''}
+                  />
+
+                  {votingDeadlineError && (
+                    <p className="text-sm text-red-500">{votingDeadlineError}</p>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setVotingDeadlineError('');
+
+                      if (!votingDeadlineInput.trim()) {
+                        setVotingDeadlineError('Voting deadline is required');
+                        return;
+                      }
+
+                      try {
+                        const deadline = BigInt(votingDeadlineInput);
+                        const now = BigInt(Math.floor(Date.now() / 1000));
+
+                        if (deadline <= now) {
+                          setVotingDeadlineError('Deadline must be in the future');
+                          return;
+                        }
+
+                        setVotingDeadline(deadline);
+                      } catch {
+                        setVotingDeadlineError('Invalid integer value');
+                      }
+                    }}
+                  >
+                    Set Voting Deadline
+                  </Button>
+
+                  {votingDeadline && (
+                    <p className="text-xs text-muted-foreground">
+                      UTC: {new Date(Number(votingDeadline) * 1000).toUTCString()}
+                    </p>
+                  )}
+                </div>
                 {validatedProgramId && programInfos && (
                   <div className="mt-4">
                     <h3 className="text-lg font-medium">Program Information</h3>
@@ -101,7 +156,7 @@ const ProgramsPage = () => {
               </div>
             </CardContent>
           </Card>
-          {multisigConfig && programInfos && (
+          {multisigConfig && programInfos && votingDeadline && (
             <div className="mt-4 flex flex-col gap-4 pb-4 md:flex-row">
               <div className="flex-1">
                 <Card className="h-full">
@@ -117,6 +172,7 @@ const ProgramsPage = () => {
                       transactionIndex={
                         Number(multisigConfig ? multisigConfig.transactionIndex : 0) + 1
                       }
+                      votingDeadline={votingDeadline}
                     />
                   </CardContent>
                 </Card>
@@ -133,6 +189,7 @@ const ProgramsPage = () => {
                       transactionIndex={
                         Number(multisigConfig ? multisigConfig.transactionIndex : 0) + 1
                       }
+                      votingDeadline={votingDeadline}
                     />
                   </CardContent>
                 </Card>

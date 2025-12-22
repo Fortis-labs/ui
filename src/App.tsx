@@ -20,7 +20,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 const App = () => {
   const queryClient = new QueryClient();
 
-  // @ts-ignore
   return (
     <QueryClientProvider client={queryClient}>
       <Wallet>

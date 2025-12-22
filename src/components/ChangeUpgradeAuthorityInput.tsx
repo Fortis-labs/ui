@@ -22,11 +22,13 @@ import { useQueryClient } from '@tanstack/react-query';
 type ChangeUpgradeAuthorityInputProps = {
   programInfos: SimplifiedProgramInfo;
   transactionIndex: number;
+  votingDeadline: bigint;
 };
 
 const ChangeUpgradeAuthorityInput = ({
   programInfos,
   transactionIndex,
+  votingDeadline,
 }: ChangeUpgradeAuthorityInputProps) => {
   const [newAuthority, setNewAuthority] = useState('');
   const wallet = useWallet();

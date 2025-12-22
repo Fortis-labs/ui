@@ -20,7 +20,11 @@ import { useMultisigData } from '@/hooks/useMultisigData';
 import invariant from 'invariant';
 import { VaultSelector } from './VaultSelector';
 
-const CreateTransaction = () => {
+type CreateTransactionProps = {
+  votingDeadline: bigint;
+};
+
+const CreateTransaction = ({ votingDeadline }: CreateTransactionProps) => {
   const wallet = useWallet();
 
   const [tx, setTx] = useState('');

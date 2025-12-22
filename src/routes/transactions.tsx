@@ -1,22 +1,27 @@
-import { Table, TableCaption, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableCaption, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import {
   Pagination,
   PaginationContent,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
+} from '../components/ui/pagination';
 import { Suspense } from 'react';
-import CreateTransaction from '@/components/CreateTransactionButton';
-import TransactionTable from '@/components/TransactionTable';
-import { useMultisig, useTransactions } from '@/hooks/useServices';
-import { useMultisigData } from '@/hooks/useMultisigData';
-import { useLocation } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import CreateTransaction from '../components/CreateTransactionButton';
+import TransactionTable from '../components/TransactionTable';
+import { useMultisig, useTransactions } from '../hooks/useServices';
+import { useMultisigData } from '../hooks/useMultisigData';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { useState } from 'react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 
 const TRANSACTIONS_PER_PAGE = 10;
 
 export default function TransactionsPage() {
+  const [votingDeadlineInput, setVotingDeadlineInput] = useState('');
+  const [votingDeadline, setVotingDeadline] = useState<bigint | null>(null);
+  const [votingDeadlineError, setVotingDeadlineError] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const pageParam = new URLSearchParams(location.search).get('page');
@@ -49,7 +54,59 @@ export default function TransactionsPage() {
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-3xl font-bold">Transactions</h1>
-            <CreateTransaction />
+            <div className="mb-4 space-y-2">
+              <label className="text-sm font-medium">
+                Voting Deadline (Unix timestamp, seconds)
+              </label>
+
+              <Input
+                placeholder="e.g. 1735689600"
+                value={votingDeadlineInput}
+                onChange={(e) => setVotingDeadlineInput(e.target.value)}
+                className={votingDeadlineError ? 'border-red-500' : ''}
+              />
+
+              {votingDeadlineError && (
+                <p className="text-sm text-red-500">{votingDeadlineError}</p>
+              )}
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setVotingDeadlineError('');
+
+                  if (!votingDeadlineInput.trim()) {
+                    setVotingDeadlineError('Voting deadline is required');
+                    return;
+                  }
+
+                  try {
+                    const deadline = BigInt(votingDeadlineInput);
+                    const now = BigInt(Math.floor(Date.now() / 1000));
+
+                    if (deadline <= now) {
+                      setVotingDeadlineError('Deadline must be in the future');
+                      return;
+                    }
+
+                    setVotingDeadline(deadline);
+                  } catch {
+                    setVotingDeadlineError('Invalid integer value');
+                  }
+                }}
+              >
+                Set Voting Deadline
+              </Button>
+
+              {votingDeadline && (
+                <p className="text-xs text-muted-foreground">
+                  UTC: {new Date(Number(votingDeadline) * 1000).toUTCString()}
+                </p>
+              )}
+            </div>
+            {votingDeadline && (
+              <CreateTransaction votingDeadline={votingDeadline} />
+            )}
           </div>
 
           <Suspense>
@@ -81,12 +138,14 @@ export default function TransactionsPage() {
             <PaginationContent>
               {page > 1 && (
                 <PaginationPrevious
+                  size="sm"
                   onClick={() => navigate(`/transactions?page=${page - 1}`)}
                   to={`/transactions?page=${page - 1}`}
                 />
               )}
               {page < totalPages && (
                 <PaginationNext
+                  size="sm"
                   to={`/transactions?page=${page + 1}`}
                   onClick={() => navigate(`/transactions?page=${page + 1}`)}
                 />
