@@ -1,5 +1,4 @@
-
-import * as multisig from '@sqds/multisig';
+import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 // top level
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 
@@ -33,7 +32,7 @@ export const useRpcUrl = () => {
   return { rpcUrl, setRpcUrl };
 };
 
-const DEFAULT_PROGRAM_ID = multisig.PROGRAM_ID.toBase58();
+const DEFAULT_PROGRAM_ID = multisig.FORTIS_MULTISIG_PROGRAM_ADDRESS;
 
 const getProgramId = () => {
   if (typeof window !== 'undefined') {

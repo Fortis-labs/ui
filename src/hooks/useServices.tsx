@@ -1,5 +1,5 @@
 
-import { getMultisigDecoder } from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
+import { getMultisigDecoder, getProposalDecoder } from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -71,7 +71,6 @@ export const useGetTokens = () => {
     },
   });
 };
-
 // Transactions
 async function fetchTransactionData(
   connection: Connection,
@@ -92,15 +91,20 @@ async function fetchTransactionData(
 
   let proposal;
   try {
-    // @ts-ignore
-    proposal = await multisig.accounts.Proposal.fromAccountAddress(connection, proposalPda[0]);
+    const proposalPubkey = new PublicKey(proposalPda[0]);
+    const decoder = getProposalDecoder();
+    const accountInfo = await connection.getAccountInfo(proposalPubkey);
+    if (!accountInfo) {
+      throw new Error("Proposal not found");
+    }
+    proposal = decoder.decode(accountInfo.data);
+
   } catch (error) {
     proposal = null;
   }
 
   return { transactionPda, proposal, index };
 }
-
 export const useTransactions = (startIndex: number, endIndex: number) => {
   const { connection, programId, multisigAddress } = useMultisigData();
 

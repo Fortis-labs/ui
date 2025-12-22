@@ -3,7 +3,6 @@ import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
 import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
 import { useRpcUrl, useProgramId } from './useSettings';
 import { useMultisigAddress } from './useMultisigAddress';
-import * as multisig from '@sqds/multisig';
 
 export const useMultisigData = () => {
   // Fetch settings from React Query hooks
@@ -18,7 +17,7 @@ export const useMultisigData = () => {
 
   // Compute programId safely
   const programId = useMemo(
-    () => (storedProgramId ? new PublicKey(storedProgramId) : multisig.PROGRAM_ID),
+    () => (new PublicKey(storedProgramId)),
     [storedProgramId]
   );
 
