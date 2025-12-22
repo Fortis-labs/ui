@@ -39,7 +39,7 @@ export default function CreateSquadForm({ }: {}) {
   const { setMultisigAddress } = useMultisigAddress();
   const validationRules = getValidationRules();
 
-  const { formState, handleChange, handleAddMember, onSubmit } = useSquadForm<{
+  const { formState, handleChange, onSubmit } = useSquadForm<{
     signature: string;
     multisig: string;
   }>(
@@ -156,13 +156,7 @@ export default function CreateSquadForm({ }: {}) {
             </div>
           ))}
 
-          <button
-            onClick={(e) => handleAddMember(e)}
-            className="mt-2 flex gap-1 items-center text-zinc-400 hover:text-zinc-600"
-          >
-            <PlusCircleIcon className="w-4" />
-            <p className="text-sm">Add Address</p>
-          </button>
+
 
           {formState.errors.members && (
             <div className="mt-1.5 text-red-500 text-xs">{formState.errors.members}</div>

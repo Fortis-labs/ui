@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '../components/ui/dialog';
 import * as bs58 from 'bs58';
 import { Button } from './ui/button';
 import { useState } from 'react';
@@ -14,9 +14,9 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { Message, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { Input } from './ui/input';
 import { toast } from 'sonner';
-import { simulateEncodedTransaction } from '@/lib/transaction/simulateEncodedTransaction';
-import { importTransaction } from '@/lib/transaction/importTransaction';
-import { useMultisigData } from '@/hooks/useMultisigData';
+import { simulateEncodedTransaction } from '../lib/transaction/simulateEncodedTransaction';
+import { importTransaction } from '../lib/transaction/importTransaction';
+import { useMultisigData } from '../hooks/useMultisigData';
 import invariant from 'invariant';
 import { VaultSelector } from './VaultSelector';
 
@@ -117,8 +117,7 @@ const CreateTransaction = ({ votingDeadline }: CreateTransactionProps) => {
                     tx,
                     connection,
                     multisigAddress,
-                    programId.toBase58(),
-                    0,
+                    votingDeadline,
                     wallet
                   ),
                   {

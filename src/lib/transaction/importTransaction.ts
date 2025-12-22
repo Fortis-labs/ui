@@ -19,8 +19,7 @@ export const importTransaction = async (
   tx: string,
   connection: Connection,
   multisigPda: string,
-  programId: string,
-  vaultIndex: number,
+  votingDeadline: bigint,
   wallet: WalletContextState
 ) => {
   if (!wallet.publicKey) {
@@ -28,12 +27,14 @@ export const importTransaction = async (
   }
   try {
     const { message, version } = decodeAndDeserialize(tx);
+    const account = await connection.getAccountInfo(new PublicKey(multisigPda));
 
-    const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
-      // @ts-ignore
-      connection,
-      new PublicKey(multisigPda)
-    );
+    if (!account) {
+      throw new Error('Multisig account not found');
+    }
+    //wallet.signTransaction
+    const multisigInfo =
+      multisig.getMultisigCodec().decode(account.data);
 
     const transactionMessage = new TransactionMessage(message);
 
@@ -45,37 +46,26 @@ export const importTransaction = async (
     const transactionIndex = Number(multisigInfo.transactionIndex) + 1;
     const transactionIndexBN = BigInt(transactionIndex);
 
-    const multisigTransactionIx = multisig.instructions.vaultTransactionCreate({
-      multisigPda: new PublicKey(multisigPda),
+    const proposalCreateIx = await multisig_ixs.proposalCreate({
       creator: wallet.publicKey,
+      multisigPda: new PublicKey(multisigPda),
       ephemeralSigners: 0,
-      // @ts-ignore
+      votingDeadline: votingDeadline,
       transactionMessage: transactionMessage,
+      addressLookupTableAccounts: addressLookupTableAccounts,
       transactionIndex: transactionIndexBN,
-      addressLookupTableAccounts,
-      rentPayer: wallet.publicKey,
-      vaultIndex: vaultIndex,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
     });
-    const proposalIx = multisig.instructions.proposalCreate({
-      multisigPda: new PublicKey(multisigPda),
-      creator: wallet.publicKey,
-      isDraft: false,
-      transactionIndex: transactionIndexBN,
-      rentPayer: wallet.publicKey,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-    });
-    const approveIx = multisig.instructions.proposalApprove({
-      multisigPda: new PublicKey(multisigPda),
+    const proposalApproveIx = await multisig_ixs.proposalApprove({
       member: wallet.publicKey,
+      multisigPda: new PublicKey(multisigPda),
       transactionIndex: transactionIndexBN,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
     });
+
 
     const blockhash = (await connection.getLatestBlockhash()).blockhash;
 
     const wrappedMessage = new TransactionMessage({
-      instructions: [multisigTransactionIx, proposalIx, approveIx],
+      instructions: [proposalCreateIx, proposalApproveIx],
       payerKey: wallet.publicKey,
       recentBlockhash: blockhash,
     }).compileToV0Message();
