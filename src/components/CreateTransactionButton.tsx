@@ -30,7 +30,7 @@ const CreateTransaction = ({ votingDeadline }: CreateTransactionProps) => {
   const [tx, setTx] = useState('');
   const [open, setOpen] = useState(false);
 
-  const { connection, multisigAddress, vaultIndex, programId } = useMultisigData();
+  const { connection, multisigAddress, programId } = useMultisigData();
 
   const getSampleMessage = async () => {
     invariant(programId, 'Program ID not found');
@@ -38,7 +38,7 @@ const CreateTransaction = ({ votingDeadline }: CreateTransactionProps) => {
     invariant(wallet.publicKey, 'Wallet ID not found');
     let memo = 'Hello from Solana land!';
     const vaultAddress = multisig.getVaultPda({
-      index: vaultIndex,
+      index: 0,
       multisigPda: new PublicKey(multisigAddress),
       programId: programId,
     })[0];
@@ -118,7 +118,7 @@ const CreateTransaction = ({ votingDeadline }: CreateTransactionProps) => {
                     connection,
                     multisigAddress,
                     programId.toBase58(),
-                    vaultIndex,
+                    0,
                     wallet
                   ),
                   {

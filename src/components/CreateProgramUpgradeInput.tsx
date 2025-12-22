@@ -38,7 +38,7 @@ const CreateProgramUpgradeInput = ({
   const [bufferAddress, setBufferAddress] = useState('');
   const [spillAddress, setSpillAddress] = useState('');
 
-  const { connection, multisigAddress, vaultIndex, programId, multisigVault } = useMultisigData();
+  const { connection, multisigAddress, programId, multisigVault } = useMultisigData();
 
   const bigIntTransactionIndex = BigInt(transactionIndex);
 
@@ -121,7 +121,7 @@ const CreateProgramUpgradeInput = ({
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],
       rentPayer: wallet.publicKey,
-      vaultIndex: vaultIndex,
+      vaultIndex: 0,
       programId,
     });
     const proposalIx = multisig.instructions.proposalCreate({

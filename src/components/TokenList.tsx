@@ -10,7 +10,7 @@ type TokenListProps = {
 };
 
 export function TokenList({ multisigPda }: TokenListProps) {
-  const { vaultIndex, programId } = useMultisigData();
+  const { programId } = useMultisigData();
   const { data: solBalance = 0 } = useBalance();
   const { data: tokens = null } = useGetTokens();
   return (
@@ -30,7 +30,7 @@ export function TokenList({ multisigPda }: TokenListProps) {
                 </p>
               </div>
               <div className="ml-auto">
-                <SendSol multisigPda={multisigPda} vaultIndex={vaultIndex} />
+                <SendSol multisigPda={multisigPda} vaultIndex={0} />
               </div>
             </div>
             {tokens && tokens.length > 0 ? <hr className="mt-2" /> : null}
@@ -53,7 +53,7 @@ export function TokenList({ multisigPda }: TokenListProps) {
                       tokenAccount={token.pubkey.toBase58()}
                       decimals={token.account.data.parsed.info.tokenAmount.decimals}
                       multisigPda={multisigPda}
-                      vaultIndex={vaultIndex}
+                      vaultIndex={0}
                       programId={programId.toBase58()}
                     />
                   </div>

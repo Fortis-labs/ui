@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { types as multisigTypes } from '@sqds/multisig';
+import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 import { PublicKey } from '@solana/web3.js';
 
 export function cn(...inputs: ClassValue[]) {
@@ -15,15 +15,7 @@ export function range(start: number, end: number): number[] {
   return result;
 }
 
-export const renderPermissions = (permissionsMask: number) => {
-  return (
-    Object.entries(multisigTypes.Permission)
-      .filter(([_, bit]) => (permissionsMask & bit) === bit) // Check which bits are set
-      .map(([key]) => key) // Get the permission names
-      .join(', ') || 'None'
-  ); // Handle empty case
-};
 
-export const isMember = (publicKey: PublicKey, members: multisigTypes.Member[]) => {
-  return members.find((v: multisigTypes.Member) => v.key.equals(publicKey));
+export const isMember = (publicKey: PublicKey, members: PublicKey[]) => {
+  return members.find((v: PublicKey) => v.equals(publicKey));
 };

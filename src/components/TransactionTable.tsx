@@ -1,11 +1,10 @@
 import * as multisig from '@sqds/multisig';
 import ApproveButton from './ApproveButton';
 import ExecuteButton from './ExecuteButton';
-import RejectButton from './RejectButton';
 import { TableBody, TableCell, TableRow } from './ui/table';
-import { useExplorerUrl, useRpcUrl } from '@/hooks/useSettings';
+import { useExplorerUrl, useRpcUrl } from '../hooks/useSettings';
 import { Link } from 'react-router-dom';
-import { useMultisig } from '@/hooks/useServices';
+import { useMultisig } from '../hooks/useServices';
 
 interface ActionButtonsProps {
   multisigPda: string;
@@ -43,7 +42,7 @@ export default function TransactionTable({
       {transactions.map((transaction, index) => {
         const stale =
           (multisigConfig &&
-            Number(multisigConfig.staleTransactionIndex) > Number(transaction.index)) ||
+            Number(multisigConfig.transactionIndex) > Number(transaction.index)) || //TODO:adjust stale tx index logic
           false;
         return (
           <TableRow key={index}>
@@ -87,12 +86,6 @@ function ActionButtons({
   return (
     <>
       <ApproveButton
-        multisigPda={multisigPda}
-        transactionIndex={transactionIndex}
-        proposalStatus={proposalStatus}
-        programId={programId}
-      />
-      <RejectButton
         multisigPda={multisigPda}
         transactionIndex={transactionIndex}
         proposalStatus={proposalStatus}

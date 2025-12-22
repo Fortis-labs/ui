@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
+//import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useMultisig } from '../hooks/useServices';
 import { ErrorBoundary } from '../components/ErrorBoundary';
@@ -27,9 +27,9 @@ const ConfigurationPage = () => {
               <div className="space-y-6">
                 {multisigConfig &&
                   multisigConfig.members.map((member) => (
-                    <div key={member.key.toBase58()}>
+                    <div key={member.toString()}>
                       <p className="text-sm font-medium">
-                        Public Key: {member.key.toBase58()}
+                        Public Key: {member.toString()}
                       </p>
                       <hr className="mt-2" />
                     </div>

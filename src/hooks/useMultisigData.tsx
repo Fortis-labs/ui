@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
+import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
 import { useRpcUrl, useProgramId } from './useSettings';
-import { useVaultIndex } from './useVaultIndex';
 import { useMultisigAddress } from './useMultisigAddress';
 import * as multisig from '@sqds/multisig';
 
@@ -10,7 +10,7 @@ export const useMultisigData = () => {
   const { rpcUrl } = useRpcUrl();
   const { programId: storedProgramId } = useProgramId();
   const { multisigAddress } = useMultisigAddress();
-  const { vaultIndex } = useVaultIndex();
+
 
   // Ensure we have a valid RPC URL (fallback to mainnet-beta)
   const effectiveRpcUrl = rpcUrl || clusterApiUrl('mainnet-beta');
@@ -25,20 +25,17 @@ export const useMultisigData = () => {
   // Compute the multisig vault PDA
   const multisigVault = useMemo(() => {
     if (multisigAddress) {
-      return multisig.getVaultPda({
+      const pda = multisig_pda.getVaultPda({
         multisigPda: new PublicKey(multisigAddress),
-        index: vaultIndex,
-        programId,
-      })[0];
+      });
+      return pda[0];
     }
     return null;
-  }, [multisigAddress, vaultIndex, programId]);
-
+  }, [multisigAddress, programId]);
   return {
     rpcUrl: effectiveRpcUrl,
     connection,
     multisigAddress,
-    vaultIndex,
     programId,
     multisigVault,
   };

@@ -35,7 +35,7 @@ const ChangeUpgradeAuthorityInput = ({
   const walletModal = useWalletModal();
   const queryClient = useQueryClient();
   const bigIntTransactionIndex = BigInt(transactionIndex);
-  const { connection, multisigAddress, vaultIndex, programId, multisigVault } = useMultisigData();
+  const { connection, multisigAddress, programId, multisigVault } = useMultisigData();
 
   const changeUpgradeAuth = async () => {
     if (!wallet.publicKey) {
@@ -98,7 +98,7 @@ const ChangeUpgradeAuthorityInput = ({
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],
       rentPayer: wallet.publicKey,
-      vaultIndex: vaultIndex,
+      vaultIndex: 0,
       programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
     });
     const proposalIx = multisig.instructions.proposalCreate({

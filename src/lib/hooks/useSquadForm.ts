@@ -67,21 +67,6 @@ export function useSquadForm<T>(
     [validateField]
   );
 
-  const handleAddMember = (e: any) => {
-    e.preventDefault();
-    handleChange("members", {
-      count: formState.values.members.count + 1,
-      memberData: [
-        ...formState.values.members.memberData,
-        {
-          key: null,
-          permissions: {
-            mask: 0,
-          },
-        },
-      ],
-    });
-  };
 
   const onSubmit = async (handler: SubmitHandler<T>): Promise<T> => {
     setFormState((prev) => ({
@@ -101,5 +86,5 @@ export function useSquadForm<T>(
     }
   };
 
-  return { formState, handleChange, handleAddMember, onSubmit };
+  return { formState, handleChange, onSubmit };
 }

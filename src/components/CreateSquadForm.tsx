@@ -1,6 +1,6 @@
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Member, createMultisig } from '@/lib/createSquad';
+import { createMultisig } from '../lib/createSquad';
 import { Keypair, PublicKey } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { CheckSquare, Copy, ExternalLink, PlusCircleIcon, XIcon } from 'lucide-react';
@@ -21,7 +21,7 @@ import { Link } from "react-router-dom";
 
 interface MemberAddresses {
   count: number;
-  memberData: Member[];
+  memberData: PublicKey[];
 }
 
 interface CreateSquadFormData {
@@ -68,8 +68,6 @@ export default function CreateSquadForm({ }: {}) {
         formState.values.threshold,
         createKey.publicKey,
         formState.values.rentCollector,
-        formState.values.configAuthority,
-        programId.toBase58()
       );
 
       const signature = await sendTransaction(transaction, connection, {
@@ -108,48 +106,46 @@ export default function CreateSquadForm({ }: {}) {
   return (
     <>
       <div className="grid grid-cols-8 gap-4 mb-6">
+        {/* Members input */}
         <div className="col-span-6 flex-col space-y-2">
           <label htmlFor="members" className="font-medium">
             Members <span className="text-red-600">*</span>
           </label>
-          {formState.values.members.memberData.map((member: Member, i: number) => (
-            <div key={i} className="grid grid-cols-4 items-center gap-2">
-              <div className="relative col-span-3">
+
+          {formState.values.members.memberData.map((member: PublicKey, i: number) => (
+            <div key={i} className="grid grid-cols-3 items-center gap-2">
+              <div className="relative col-span-2">
                 <Input
-                  defaultValue={member.key ? member.key.toBase58() : ''}
+                  defaultValue={member ? member.toBase58() : ''}
                   placeholder={`Member key ${i + 1}`}
                   onChange={(e) => {
                     handleChange('members', {
                       count: formState.values.members.count,
-                      memberData: formState.values.members.memberData.map(
-                        (member: Member, index: number) => {
-                          if (index === i) {
-                            let newKey = null;
-                            try {
-                              if (e.target.value && PublicKey.isOnCurve(e.target.value)) {
-                                newKey = new PublicKey(e.target.value);
-                              }
-                            } catch (error) {
-                              console.error('Invalid public key input:', error);
+                      memberData: formState.values.members.memberData.map((m: PublicKey, index: number) => {
+                        if (index === i) {
+                          let newKey: PublicKey | null = null;
+                          try {
+                            if (e.target.value) {
+                              newKey = new PublicKey(e.target.value);
                             }
-                            return {
-                              ...member,
-                              key: newKey,
-                            };
+                          } catch {
+                            console.error('Invalid public key input');
                           }
-                          return member;
+                          return { ...m, key: newKey };
                         }
-                      ),
+                        return m;
+                      }),
                     });
                   }}
                 />
+
                 {i > 0 && (
                   <XIcon
                     onClick={() => {
                       handleChange('members', {
                         count: formState.values.members.count,
                         memberData: formState.values.members.memberData.filter(
-                          (_: Member, index: number) => index !== i
+                          (_: PublicKey, index: number) => index !== i
                         ),
                       });
                     }}
@@ -157,42 +153,9 @@ export default function CreateSquadForm({ }: {}) {
                   />
                 )}
               </div>
-              <Select
-                defaultValue={member.permissions.mask.toString()}
-                onValueChange={(e: any) => {
-                  handleChange('members', {
-                    count: formState.values.members.count,
-                    memberData: formState.values.members.memberData.map(
-                      (member: Member, index: number) => {
-                        if (index === i) {
-                          return {
-                            ...member,
-                            permissions: {
-                              mask: Number(e),
-                            },
-                          };
-                        }
-                        return member;
-                      }
-                    ),
-                  });
-                }}
-              >
-                <SelectTrigger className="col-span-1">
-                  <SelectValue placeholder="Select permissions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="0">None</SelectItem>
-                    <SelectItem value="1">Proposer</SelectItem>
-                    <SelectItem value="2">Voter</SelectItem>
-                    <SelectItem value="4">Executor</SelectItem>
-                    <SelectItem value="7">All</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
             </div>
           ))}
+
           <button
             onClick={(e) => handleAddMember(e)}
             className="mt-2 flex gap-1 items-center text-zinc-400 hover:text-zinc-600"
@@ -200,10 +163,13 @@ export default function CreateSquadForm({ }: {}) {
             <PlusCircleIcon className="w-4" />
             <p className="text-sm">Add Address</p>
           </button>
+
           {formState.errors.members && (
             <div className="mt-1.5 text-red-500 text-xs">{formState.errors.members}</div>
           )}
         </div>
+
+        {/* Threshold input */}
         <div className="col-span-4 flex-col space-y-2">
           <label htmlFor="threshold" className="font-medium">
             Threshold <span className="text-red-600">*</span>
@@ -213,12 +179,13 @@ export default function CreateSquadForm({ }: {}) {
             placeholder="Approval threshold for execution"
             defaultValue={formState.values.threshold}
             onChange={(e) => handleChange('threshold', parseInt(e.target.value))}
-            className=""
           />
           {formState.errors.threshold && (
             <div className="mt-1.5 text-red-500 text-xs">{formState.errors.threshold}</div>
           )}
         </div>
+
+        {/* Optional fields */}
         <div className="col-span-4 flex-col space-y-2">
           <label htmlFor="rentCollector" className="font-medium">
             Rent Collector
@@ -228,11 +195,7 @@ export default function CreateSquadForm({ }: {}) {
             placeholder="Optional rent collector"
             defaultValue={formState.values.rentCollector}
             onChange={(e) => handleChange('rentCollector', e.target.value)}
-            className=""
           />
-          {formState.errors.rentCollector && (
-            <div className="mt-1.5 text-red-500 text-xs">{formState.errors.rentCollector}</div>
-          )}
         </div>
         <div className="col-span-4 flex-col space-y-2">
           <label htmlFor="configAuthority" className="font-medium">
@@ -243,13 +206,10 @@ export default function CreateSquadForm({ }: {}) {
             placeholder="Optional config authority"
             defaultValue={formState.values.configAuthority}
             onChange={(e) => handleChange('configAuthority', e.target.value)}
-            className=""
           />
-          {formState.errors.configAuthority && (
-            <div className="mt-1.5 text-red-500 text-xs">{formState.errors.configAuthority}</div>
-          )}
         </div>
       </div>
+
       <Button
         onClick={() =>
           toast.promise(onSubmit(submitHandler), {
@@ -295,6 +255,7 @@ export default function CreateSquadForm({ }: {}) {
         Create Squad
       </Button>
     </>
+
   );
 }
 
@@ -314,13 +275,13 @@ function getValidationRules(): ValidationRules {
       if (!valid) return 'Config authority must be a valid public key';
       return null;
     },
-    members: async (value: { count: number; memberData: Member[] }) => {
+    members: async (value: { count: number; memberData: PublicKey[] }) => {
       if (value.count < 1) return 'At least one member is required';
 
       const valid = await Promise.all(
         value.memberData.map(async (member) => {
-          if (member.key == null) return 'Invalid Member Key';
-          const valid = isPublickey(member.key.toBase58());
+          if (member == null) return 'Invalid Member Key';
+          const valid = isPublickey(member.toBase58());
           if (!valid) return 'Invalid Member Key';
           return null;
         })

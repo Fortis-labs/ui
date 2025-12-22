@@ -1,55 +1,31 @@
 'use client';
 import * as web3 from '@solana/web3.js';
-import * as multisig from '@sqds/multisig';
-import { PublicKey } from '@solana/web3.js';
-
-export interface Member {
-  key: web3.PublicKey | null;
-  permissions: multisig.generated.Permissions;
-}
-
+import { PublicKey, Transaction } from '@solana/web3.js';
+import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
+import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
+import * as multisig_ixs from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/instructions';
 export async function createMultisig(
   connection: web3.Connection,
-  user: web3.PublicKey,
-  members: Member[],
+  user: PublicKey,
+  members: PublicKey[],
   threshold: number,
-  createKey: web3.PublicKey,
-  rentCollector?: string,
-  configAuthority?: string,
-  programId?: string
+  createKey: PublicKey,
+  rentCollector?: PublicKey,
 ) {
   try {
-    const multisigPda = multisig.getMultisigPda({
-      createKey,
-      programId: programId ? new web3.PublicKey(programId) : multisig.PROGRAM_ID,
-    })[0];
-
-    const [programConfig] = multisig.getProgramConfigPda({
-      programId: programId ? new web3.PublicKey(programId) : multisig.PROGRAM_ID,
-    });
-
-    const programConfigInfo = await multisig.accounts.ProgramConfig.fromAccountAddress(
-      // @ts-ignore
-      connection,
-      programConfig
-    );
-
-    const configTreasury = programConfigInfo.treasury;
-
-    const ix = multisig.instructions.multisigCreateV2({
-      multisigPda: multisigPda,
-      createKey: createKey,
+    const multisigPda = (await multisig_pda.getMultisigPda({ createKey: createKey }))[0];
+    const configTreasury = multisig_pda.FORTIS_TREASURY;
+    const ix = await multisig_ixs.multisigCreate({
+      treasury: new PublicKey(configTreasury.toString()),
       creator: user,
-      members: members as any,
-      threshold: threshold,
-      configAuthority: configAuthority ? new PublicKey(configAuthority) : null,
-      treasury: configTreasury,
-      rentCollector: rentCollector ? new PublicKey(rentCollector) : null,
-      timeLock: 0,
-      programId: programId ? new web3.PublicKey(programId) : multisig.PROGRAM_ID,
+      multisigPda: new PublicKey(multisigPda.toString()),
+      threshold,
+      members,
+      createKey: createKey,
+      rentCollector: rentCollector ? rentCollector : null,
     });
 
-    const tx = new web3.Transaction().add(ix);
+    const tx = new Transaction().add(ix);
 
     tx.feePayer = user;
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
