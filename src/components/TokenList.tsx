@@ -2,14 +2,15 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import SendTokens from './SendTokensButton';
 import SendSol from './SendSolButton';
-import { useMultisigData } from '~/hooks/useMultisigData';
-import { useBalance, useGetTokens } from '~/hooks/useServices';
+import { useMultisigData } from '../hooks/useMultisigData';
+import { useBalance, useGetTokens } from '../hooks/useServices';
 
 type TokenListProps = {
   multisigPda: string;
+  votingDeadline: bigint;
 };
 
-export function TokenList({ multisigPda }: TokenListProps) {
+export function TokenList({ multisigPda, votingDeadline }: TokenListProps) {
   const { programId } = useMultisigData();
   const { data: solBalance = 0 } = useBalance();
   const { data: tokens = null } = useGetTokens();
@@ -30,7 +31,8 @@ export function TokenList({ multisigPda }: TokenListProps) {
                 </p>
               </div>
               <div className="ml-auto">
-                <SendSol multisigPda={multisigPda} vaultIndex={0} />
+                <SendSol multisigPda={multisigPda}
+                  votingDeadline={votingDeadline} />
               </div>
             </div>
             {tokens && tokens.length > 0 ? <hr className="mt-2" /> : null}
@@ -53,7 +55,7 @@ export function TokenList({ multisigPda }: TokenListProps) {
                       tokenAccount={token.pubkey.toBase58()}
                       decimals={token.account.data.parsed.info.tokenAmount.decimals}
                       multisigPda={multisigPda}
-                      vaultIndex={0}
+                      votingDeadline={votingDeadline}
                       programId={programId.toBase58()}
                     />
                   </div>

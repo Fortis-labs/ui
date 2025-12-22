@@ -1,7 +1,6 @@
 'use client';
 import * as web3 from '@solana/web3.js';
 import { PublicKey, Transaction } from '@solana/web3.js';
-import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
 import * as multisig_ixs from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/instructions';
 export async function createMultisig(

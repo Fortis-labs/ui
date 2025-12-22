@@ -7,7 +7,9 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import { Button } from './ui/button';
-import * as multisig from '@sqds/multisig';
+import * as multisig_ixs from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/instructions';
+import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
+import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { toast } from 'sonner';
@@ -16,8 +18,8 @@ import { DialogTrigger } from './ui/dialog';
 import { DialogContent, DialogTitle } from './ui/dialog';
 import { useState } from 'react';
 import { Input } from './ui/input';
-import { range } from '@/lib/utils';
-import { useMultisigData } from '@/hooks/useMultisigData';
+import { range } from '../lib/utils';
+import { useMultisigData } from '../hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 
@@ -31,6 +33,7 @@ type ExecuteButtonProps = {
   transactionIndex: number;
   proposalStatus: string;
   programId: string;
+  disabled?: boolean; // optional, can be controlled from parent
 };
 
 const ExecuteButton = ({
@@ -70,40 +73,24 @@ const ExecuteButton = ({
       connection,
       member: member.toBase58(),
       transactionIndex: bigIntTransactionIndex,
-      programId: programId ? programId : multisig.PROGRAM_ID.toBase58(),
+      programId: programId ? programId : multisig,
     });
 
-    const [transactionPda] = multisig.getTransactionPda({
+    const [transactionPda] = multisig_pda.getTransactionPda({
       multisigPda: new PublicKey(multisigPda),
       index: bigIntTransactionIndex,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
+
     });
 
     let txData;
-    let txType;
     try {
-      await multisig.accounts.VaultTransaction.fromAccountAddress(
-        // @ts-ignore
-        connection,
-        transactionPda
-      );
-      txType = 'vault';
-    } catch (error) {
-      try {
-        await multisig.accounts.ConfigTransaction.fromAccountAddress(
-          // @ts-ignore
-          connection,
-          transactionPda
-        );
-        txType = 'config';
-      } catch (e) {
-        txData = await multisig.accounts.Batch.fromAccountAddress(
-          // @ts-ignore
-          connection,
-          transactionPda
-        );
-        txType = 'batch';
+
+      const accountInfo = await connection.getAccountInfo(transactionPda);
+      if (!accountInfo) {
+        throw new Error("Multisig not found");
       }
+      const VaultTransactionInfo = multisig.getVaultTransactionDecoder().decode(accountInfo.data);
+    } catch (error) {
     }
 
     let transactions: VersionedTransaction[] = [];
@@ -116,77 +103,22 @@ const ExecuteButton = ({
     });
 
     let blockhash = (await connection.getLatestBlockhash()).blockhash;
+    const resp = await multisig_ixs.proposalExecute({
+      multisigPda: new PublicKey(multisigPda),
+      connection,
+      member,
+      transactionIndex: bigIntTransactionIndex,
+    });
+    transactions.push(
+      new VersionedTransaction(
+        new TransactionMessage({
+          instructions: [priorityFeeInstruction, computeUnitInstruction, resp.instruction],
+          payerKey: member,
+          recentBlockhash: blockhash,
+        }).compileToV0Message(resp.lookupTableAccounts)
+      )
+    );
 
-    if (txType == 'vault') {
-      const resp = await multisig.instructions.vaultTransactionExecute({
-        multisigPda: new PublicKey(multisigPda),
-        // @ts-ignore
-        connection,
-        member,
-        transactionIndex: bigIntTransactionIndex,
-        programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-      });
-      transactions.push(
-        new VersionedTransaction(
-          new TransactionMessage({
-            instructions: [priorityFeeInstruction, computeUnitInstruction, resp.instruction],
-            payerKey: member,
-            recentBlockhash: blockhash,
-          }).compileToV0Message(resp.lookupTableAccounts)
-        )
-      );
-    } else if (txType == 'config') {
-      const executeIx = multisig.instructions.configTransactionExecute({
-        multisigPda: new PublicKey(multisigPda),
-        member,
-        rentPayer: member,
-        transactionIndex: bigIntTransactionIndex,
-        programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-      });
-      transactions.push(
-        new VersionedTransaction(
-          new TransactionMessage({
-            instructions: [priorityFeeInstruction, computeUnitInstruction, executeIx],
-            payerKey: member,
-            recentBlockhash: blockhash,
-          }).compileToV0Message()
-        )
-      );
-    } else if (txType == 'batch' && txData) {
-      const executedBatchIndex = txData.executedTransactionIndex;
-      const batchSize = txData.size;
-
-      if (executedBatchIndex === undefined || batchSize === undefined) {
-        throw new Error(
-          "executedBatchIndex or batchSize is undefined and can't execute the transaction"
-        );
-      }
-
-      transactions.push(
-        ...(await Promise.all(
-          range(executedBatchIndex + 1, batchSize).map(async (batchIndex) => {
-            const { instruction: transactionExecuteIx, lookupTableAccounts } =
-              await multisig.instructions.batchExecuteTransaction({
-                // @ts-ignore
-                connection,
-                member,
-                batchIndex: bigIntTransactionIndex,
-                transactionIndex: batchIndex,
-                multisigPda: new PublicKey(multisigPda),
-                programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-              });
-
-            const message = new TransactionMessage({
-              payerKey: member,
-              recentBlockhash: blockhash,
-              instructions: [priorityFeeInstruction, computeUnitInstruction, transactionExecuteIx],
-            }).compileToV0Message(lookupTableAccounts);
-
-            return new VersionedTransaction(message);
-          })
-        ))
-      );
-    }
 
     const signedTransactions = await wallet.signAllTransactions(transactions);
 

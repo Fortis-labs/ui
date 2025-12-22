@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { useMultisigAddress } from '@/hooks/useMultisigAddress';
+import { useMultisigAddress } from '../hooks/useMultisigAddress';
 
 const MultisigInput = ({ onUpdate }: { onUpdate: () => void }) => {
   const { multisigAddress, setMultisigAddress } = useMultisigAddress();

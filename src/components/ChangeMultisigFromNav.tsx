@@ -1,4 +1,4 @@
-import { useMultisigAddress } from '@/hooks/useMultisigAddress';
+import { useMultisigAddress } from '../hooks/useMultisigAddress';
 import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
 

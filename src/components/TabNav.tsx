@@ -1,5 +1,5 @@
 import { ArrowDownUp, LucideHome, Settings, Users, Box, Github } from 'lucide-react';
-import ConnectWallet from '@/components/ConnectWalletButton';
+import ConnectWallet from '../components/ConnectWalletButton';
 import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { ChangeMultisigFromNav } from './ChangeMultisigFromNav';
@@ -34,11 +34,10 @@ export default function TabNav() {
                 <li key={tab.route}>
                   <Link
                     to={tab.route}
-                    className={`flex items-center rounded-lg px-4 py-3 text-slate-900 ${
-                      (path!.startsWith(`${tab.route}/`) && tab.route !== '/') || tab.route === path
+                    className={`flex items-center rounded-lg px-4 py-3 text-slate-900 ${(path!.startsWith(`${tab.route}/`) && tab.route !== '/') || tab.route === path
                         ? 'bg-slate-400'
                         : 'hover:bg-slate-400'
-                    }`}
+                      }`}
                   >
                     {tab.icon}
                     <span className="ml-3 flex-1 whitespace-nowrap text-base text-black">

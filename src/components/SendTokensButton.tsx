@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '~/components/ui/dialog';
+} from '../components/ui/dialog';
 import { Button } from './ui/button';
 import { useState } from 'react';
 import {
@@ -14,14 +14,16 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
-import * as multisig from '@sqds/multisig';
+import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
+import * as multisig_ixs from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/instructions';
+import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Input } from './ui/input';
 import { toast } from 'sonner';
-import { isPublickey } from '~/lib/isPublickey';
-import { useMultisigData } from '~/hooks/useMultisigData';
+import { isPublickey } from '../lib/isPublickey';
+import { useMultisigData } from '../hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAccess } from '../hooks/useAccess';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
@@ -31,7 +33,7 @@ type SendTokensProps = {
   mint: string;
   decimals: number;
   multisigPda: string;
-  vaultIndex: number;
+  votingDeadline: bigint;
   programId?: string;
 };
 
@@ -40,7 +42,7 @@ const SendTokens = ({
   mint,
   decimals,
   multisigPda,
-  vaultIndex,
+  votingDeadline,
   programId,
 }: SendTokensProps) => {
   const wallet = useWallet();
@@ -73,11 +75,10 @@ const SendTokens = ({
       TOKEN_PROGRAM
     );
 
-    const vaultAddress = multisig
+    const vaultAddress = multisig_pda
       .getVaultPda({
-        index: vaultIndex,
         multisigPda: new PublicKey(multisigPda),
-        programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
+
       })[0]
       .toBase58();
 
@@ -100,12 +101,13 @@ const SendTokens = ({
       TOKEN_PROGRAM
     );
 
-    const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
-      // @ts-ignore
-      connection,
-      new PublicKey(multisigPda)
-    );
-
+    const multisigPubkey = new PublicKey(multisigPda);
+    const decoder = multisig.getMultisigDecoder();
+    const accountInfo = await connection.getAccountInfo(multisigPubkey);
+    if (!accountInfo) {
+      throw new Error("Multisig not found");
+    }
+    const multisigInfo = decoder.decode(accountInfo.data);
     const blockhash = (await connection.getLatestBlockhash()).blockhash;
 
     const transferMessage = new TransactionMessage({
@@ -117,34 +119,27 @@ const SendTokens = ({
     const transactionIndex = Number(multisigInfo.transactionIndex) + 1;
     const transactionIndexBN = BigInt(transactionIndex);
 
-    const multisigTransactionIx = multisig.instructions.vaultTransactionCreate({
-      multisigPda: new PublicKey(multisigPda),
+
+    const createIx = await multisig_ixs.proposalCreate({
       creator: wallet.publicKey,
+      multisigPda: new PublicKey(multisigPda),
       ephemeralSigners: 0,
-      // @ts-ignore
+      votingDeadline: votingDeadline,
       transactionMessage: transferMessage,
-      transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],
-      rentPayer: wallet.publicKey,
-      vaultIndex: vaultIndex,
-    });
-    const proposalIx = multisig.instructions.proposalCreate({
-      multisigPda: new PublicKey(multisigPda),
-      creator: wallet.publicKey,
-      isDraft: false,
       transactionIndex: transactionIndexBN,
-      rentPayer: wallet.publicKey,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
+
     });
-    const approveIx = multisig.instructions.proposalApprove({
+
+    const approveIx = await multisig_ixs.proposalApprove({
       multisigPda: new PublicKey(multisigPda),
       member: wallet.publicKey,
       transactionIndex: transactionIndexBN,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
+
     });
 
     const message = new TransactionMessage({
-      instructions: [multisigTransactionIx, proposalIx, approveIx],
+      instructions: [createIx, approveIx],
       payerKey: wallet.publicKey,
       recentBlockhash: blockhash,
     }).compileToV0Message();

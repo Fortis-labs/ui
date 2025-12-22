@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
-import { useRpcUrl } from '~/hooks/useSettings'; // Now using React Query!
+import { useRpcUrl } from '../hooks/useSettings'; // Now using React Query!
 
 const SetRpcUrlInput = ({ onUpdate }: { onUpdate?: () => void }) => {
   const { rpcUrl: storedRpcUrl, setRpcUrl } = useRpcUrl(); // Use React Query
@@ -13,11 +13,11 @@ const SetRpcUrlInput = ({ onUpdate }: { onUpdate?: () => void }) => {
   const isValidUrl = (url: string) => {
     const urlPattern = new RegExp(
       '^(https?:\\/\\/)?' + // validate protocol
-        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-        '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-        '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-        '(\\#[-a-z\\d_]*)?$',
+      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+      '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+      '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+      '(\\#[-a-z\\d_]*)?$',
       'i'
     );
     return !!urlPattern.test(url);

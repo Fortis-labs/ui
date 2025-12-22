@@ -1,4 +1,4 @@
-import * as multisig from '@sqds/multisig';
+import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 import ApproveButton from './ApproveButton';
 import ExecuteButton from './ExecuteButton';
 import { TableBody, TableCell, TableRow } from './ui/table';
@@ -6,10 +6,15 @@ import { useExplorerUrl, useRpcUrl } from '../hooks/useSettings';
 import { Link } from 'react-router-dom';
 import { useMultisig } from '../hooks/useServices';
 
+export enum ProposalStatus {
+  NOT_APPROVED = 0,
+  APPROVED = 1,
+  EXECUTED = 2,
+}
 interface ActionButtonsProps {
   multisigPda: string;
   transactionIndex: number;
-  proposalStatus: string;
+  proposal: multisig.Proposal;
   programId: string;
 }
 
@@ -21,7 +26,7 @@ export default function TransactionTable({
   multisigPda: string;
   transactions: {
     transactionPda: string;
-    proposal: multisig.generated.Proposal | null;
+    proposal: multisig.Proposal;
     index: bigint;
   }[];
   programId?: string;
@@ -39,63 +44,79 @@ export default function TransactionTable({
   }
   return (
     <TableBody>
-      {transactions.map((transaction, index) => {
-        const stale =
-          (multisigConfig &&
-            Number(multisigConfig.transactionIndex) > Number(transaction.index)) || //TODO:adjust stale tx index logic
-          false;
-        return (
-          <TableRow key={index}>
-            <TableCell>{Number(transaction.index)}</TableCell>
-            <TableCell className="text-blue-500">
-              <Link
-                target={`_blank`}
-                to={createSolanaExplorerUrl(transaction.transactionPda, rpcUrl!)}
-              >
-                {transaction.transactionPda}
-              </Link>
-            </TableCell>
-            <TableCell>
-              {stale ? '(stale)' : transaction.proposal?.status.__kind || 'None'}
-            </TableCell>
-            <TableCell>
-              {!stale ? (
-                <ActionButtons
-                  multisigPda={multisigPda!}
-                  transactionIndex={Number(transaction.index)}
-                  proposalStatus={transaction.proposal?.status.__kind || 'None'}
-                  programId={programId ? programId : multisig.PROGRAM_ID.toBase58()}
-                />
-              ) : (
-                <span>Stale</span>
-              )}
-            </TableCell>
-          </TableRow>
-        );
-      })}
+      {transactions.map((tx) => (
+        <TableRow key={tx.transactionPda}>
+          <TableCell>{Number(tx.index)}</TableCell>
+
+          <TableCell className="text-blue-500">
+            <Link
+              target="_blank"
+              to={`${useExplorerUrl}/address/${tx.transactionPda}?cluster=custom&customUrl=${encodeURIComponent(
+                rpcUrl!
+              )}`}
+            >
+              {tx.transactionPda}
+            </Link>
+          </TableCell>
+
+          <TableCell>{renderStatus(tx.proposal.status)}</TableCell>
+
+          <TableCell>
+            <ActionButtons
+              multisigPda={multisigPda}
+              transactionIndex={Number(tx.index)}
+              proposal={tx.proposal}
+              programId={programId ?? multisig.FORTIS_MULTISIG_PROGRAM_ADDRESS}
+            />
+          </TableCell>
+        </TableRow>
+      ))}
     </TableBody>
   );
+}
+
+function renderStatus(status: number) {
+  switch (status) {
+    case ProposalStatus.NOT_APPROVED:
+      return "Not approved";
+    case ProposalStatus.APPROVED:
+      return "Approved";
+    case ProposalStatus.EXECUTED:
+      return "Executed";
+    default:
+      return "Unknown";
+  }
 }
 
 function ActionButtons({
   multisigPda,
   transactionIndex,
-  proposalStatus,
+  proposal,
   programId,
 }: ActionButtonsProps) {
+  const now = BigInt(Math.floor(Date.now() / 1000));
+
+  const canApprove =
+    proposal.status === ProposalStatus.NOT_APPROVED &&
+    now <= proposal.votingDeadline;
+
+  const canExecute = proposal.status === ProposalStatus.APPROVED;
+
   return (
     <>
       <ApproveButton
         multisigPda={multisigPda}
         transactionIndex={transactionIndex}
-        proposalStatus={proposalStatus}
+        proposalStatus={renderStatus(proposal.status)}
         programId={programId}
+        disabled={!canApprove}
       />
       <ExecuteButton
         multisigPda={multisigPda}
         transactionIndex={transactionIndex}
-        proposalStatus={proposalStatus}
+        proposalStatus={renderStatus(proposal.status)}
         programId={programId}
+        disabled={!canExecute}
       />
     </>
   );

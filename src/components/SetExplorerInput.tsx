@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
-import { useExplorerUrl } from '~/hooks/useSettings';
+import { useExplorerUrl } from '../hooks/useSettings';
 
 const DEBOUNCE_DELAY = 500; // 500ms debounce
 

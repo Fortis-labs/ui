@@ -1,10 +1,10 @@
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { Button } from './ui/button';
-import * as multisig from '@sqds/multisig';
+import * as multisig_ixs from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/instructions';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { toast } from 'sonner';
-import { useMultisigData } from '@/hooks/useMultisigData';
+import { useMultisigData } from '../hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 
@@ -13,8 +13,8 @@ type ApproveButtonProps = {
   transactionIndex: number;
   proposalStatus: string;
   programId: string;
+  disabled?: boolean; // optional, can be controlled from parent
 };
-
 const ApproveButton = ({
   multisigPda,
   transactionIndex,
@@ -23,61 +23,49 @@ const ApproveButton = ({
 }: ApproveButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
-  const validKinds = ['Rejected', 'Approved', 'Executing', 'Executed', 'Cancelled'];
-  const isKindValid = validKinds.includes(proposalStatus || 'None');
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
+
+  const isDisabled = proposalStatus !== 'NotApproved';
 
   const approveProposal = async () => {
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
       throw 'Wallet not connected';
     }
-    let bigIntTransactionIndex = BigInt(transactionIndex);
-    const transaction = new Transaction();
-    if (proposalStatus === 'None') {
-      const createProposalInstruction = multisig.instructions.proposalCreate({
-        multisigPda: new PublicKey(multisigPda),
-        creator: wallet.publicKey,
-        isDraft: false,
-        transactionIndex: bigIntTransactionIndex,
-        rentPayer: wallet.publicKey,
-        programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-      });
-      transaction.add(createProposalInstruction);
+
+    // HARD GUARD (important)
+    if (isDisabled) {
+      return;
     }
-    if (proposalStatus == 'Draft') {
-      const activateProposalInstruction = multisig.instructions.proposalActivate({
+
+    const tx = new Transaction();
+
+    tx.add(
+      await multisig_ixs.proposalApprove({
         multisigPda: new PublicKey(multisigPda),
         member: wallet.publicKey,
-        transactionIndex: bigIntTransactionIndex,
-        programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-      });
-      transaction.add(activateProposalInstruction);
-    }
-    const approveProposalInstruction = multisig.instructions.proposalApprove({
-      multisigPda: new PublicKey(multisigPda),
-      member: wallet.publicKey,
-      transactionIndex: bigIntTransactionIndex,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-    });
-    transaction.add(approveProposalInstruction);
-    const signature = await wallet.sendTransaction(transaction, connection, {
+        transactionIndex: BigInt(transactionIndex),
+      })
+    );
+
+    const signature = await wallet.sendTransaction(tx, connection, {
       skipPreflight: true,
     });
-    console.log('Transaction signature', signature);
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
-    const sent = await waitForConfirmation(connection, [signature]);
-    if (!sent[0]) {
-      throw `Transaction failed or unable to confirm. Check ${signature}`;
+
+    toast.loading('Confirming...', { id: 'transaction' });
+
+    const [confirmed] = await waitForConfirmation(connection, [signature]);
+    if (!confirmed) {
+      throw `Transaction failed or unable to confirm: ${signature}`;
     }
+
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
   };
+
   return (
     <Button
-      disabled={isKindValid}
+      disabled={isDisabled}
       onClick={() =>
         toast.promise(approveProposal, {
           id: 'transaction',
@@ -92,5 +80,4 @@ const ApproveButton = ({
     </Button>
   );
 };
-
 export default ApproveButton;

@@ -4,7 +4,7 @@ import { Input } from './ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useState } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import * as multisig from '@sqds/multisig';
+import * as multisig_ixs from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/instructions';
 import {
   AccountMeta,
   PublicKey,
@@ -13,7 +13,7 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import { toast } from 'sonner';
-import { isPublickey } from '@/lib/isPublickey';
+import { isPublickey } from '../lib/isPublickey';
 import { SimplifiedProgramInfo } from '../hooks/useProgram';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
@@ -88,36 +88,25 @@ const ChangeUpgradeAuthorityInput = ({
     });
 
     const transactionIndexBN = BigInt(transactionIndex);
-
-    const multisigTransactionIx = multisig.instructions.vaultTransactionCreate({
+    const proposalIx = await multisig_ixs.proposalCreate({
       multisigPda: new PublicKey(multisigPda),
       creator: wallet.publicKey,
       ephemeralSigners: 0,
-      // @ts-ignore
+      votingDeadline,
       transactionMessage,
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],
-      rentPayer: wallet.publicKey,
-      vaultIndex: 0,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
+
+
     });
-    const proposalIx = multisig.instructions.proposalCreate({
-      multisigPda: new PublicKey(multisigPda),
-      creator: wallet.publicKey,
-      isDraft: false,
-      transactionIndex: bigIntTransactionIndex,
-      rentPayer: wallet.publicKey,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-    });
-    const approveIx = multisig.instructions.proposalApprove({
+    const approveIx = await multisig_ixs.proposalApprove({
       multisigPda: new PublicKey(multisigPda),
       member: wallet.publicKey,
       transactionIndex: bigIntTransactionIndex,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
     });
 
     const message = new TransactionMessage({
-      instructions: [multisigTransactionIx, proposalIx, approveIx],
+      instructions: [proposalIx, approveIx],
       payerKey: wallet.publicKey,
       recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
     }).compileToV0Message();
