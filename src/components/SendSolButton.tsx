@@ -30,26 +30,43 @@ import { waitForConfirmation } from '../lib/transactionConfirmation';
 
 type SendSolProps = {
   multisigPda: string;
-  votingDeadline: bigint;
 };
 
-const SendSol = ({ multisigPda, votingDeadline }: SendSolProps) => {
+const SendSol = ({ multisigPda }: SendSolProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const closeDialog = () => setIsOpen(false);
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const [amount, setAmount] = useState<string>('');
   const [recipient, setRecipient] = useState('');
+  const [votingDeadlineInput, setVotingDeadlineInput] = useState('');
+  const [deadlineError, setDeadlineError] = useState('');
   const { connection, programId } = useMultisigData();
   const queryClient = useQueryClient();
   const parsedAmount = parseFloat(amount);
   const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0;
   const isMember = useAccess();
-
+  const parseVotingDeadline = (): bigint | null => {
+    try {
+      const deadline = BigInt(votingDeadlineInput);
+      const now = BigInt(Math.floor(Date.now() / 1000));
+      if (deadline <= now) {
+        setDeadlineError('Deadline must be in the future');
+        return null;
+      }
+      return deadline;
+    } catch {
+      setDeadlineError('Invalid unix timestamp');
+      return null;
+    }
+  };
   const transfer = async () => {
     if (!wallet.publicKey) {
       throw 'Wallet not connected';
     }
+    setDeadlineError('');
+    const votingDeadline = parseVotingDeadline();
+    if (!votingDeadline) throw 'Invalid voting deadline';
 
     const vaultAddress = multisig_pda.getVaultPda({
       multisigPda: new PublicKey(multisigPda)
@@ -116,8 +133,10 @@ const SendSol = ({ multisigPda, votingDeadline }: SendSolProps) => {
     if (!sent[0]) {
       throw `Transaction failed or unable to confirm. Check ${signature}`;
     }
+
     setAmount('');
     setRecipient('');
+    setVotingDeadlineInput('');
     closeDialog();
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
   };
@@ -131,40 +150,62 @@ const SendSol = ({ multisigPda, votingDeadline }: SendSolProps) => {
             if (!wallet.publicKey) {
               e.preventDefault();
               walletModal.setVisible(true);
-              return;
-            } else {
-              setIsOpen(true);
             }
           }}
         >
           Send SOL
         </Button>
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Transfer SOL</DialogTitle>
           <DialogDescription>
-            Create a proposal to transfer SOL to another address.
+            Create a proposal to transfer SOL from the multisig vault.
           </DialogDescription>
         </DialogHeader>
-        <Input placeholder="Recipient" type="text" onChange={(e) => setRecipient(e.target.value)} />
-        {isPublickey(recipient) ? null : <p className="text-xs">Invalid recipient address</p>}
-        <Input placeholder="Amount" type="number" onChange={(e) => setAmount(e.target.value)} />
-        {!isAmountValid && amount.length > 0 && (
+
+        <Input
+          placeholder="Recipient address"
+          onChange={(e) => setRecipient(e.target.value)}
+        />
+        {!isPublickey(recipient) && recipient && (
+          <p className="text-xs text-red-500">Invalid recipient</p>
+        )}
+
+        <Input
+          placeholder="Amount (SOL)"
+          type="number"
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        {!isAmountValid && amount && (
           <p className="text-xs text-red-500">Invalid amount</p>
         )}
+
+        <Input
+          placeholder="Voting deadline (unix seconds)"
+          onChange={(e) => setVotingDeadlineInput(e.target.value)}
+        />
+        {deadlineError && (
+          <p className="text-xs text-red-500">{deadlineError}</p>
+        )}
+
         <Button
+          disabled={
+            !isPublickey(recipient) ||
+            !isAmountValid ||
+            !votingDeadlineInput
+          }
           onClick={() =>
             toast.promise(transfer, {
               id: 'transaction',
-              loading: 'Loading...',
-              success: 'Transfer proposed.',
-              error: (e) => `Failed to propose: ${e}`,
+              loading: 'Creating proposal...',
+              success: 'Transfer proposal created',
+              error: (e) => `Failed: ${e}`,
             })
           }
-          disabled={!isPublickey(recipient)}
         >
-          Transfer
+          Create Proposal
         </Button>
       </DialogContent>
     </Dialog>

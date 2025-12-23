@@ -33,7 +33,6 @@ type SendTokensProps = {
   mint: string;
   decimals: number;
   multisigPda: string;
-  votingDeadline: bigint;
   programId?: string;
 };
 
@@ -42,21 +41,34 @@ const SendTokens = ({
   mint,
   decimals,
   multisigPda,
-  votingDeadline,
   programId,
 }: SendTokensProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const [amount, setAmount] = useState<string>('');
   const [recipient, setRecipient] = useState('');
-
+  const [votingDeadlineInput, setVotingDeadlineInput] = useState('');
+  const [deadlineError, setDeadlineError] = useState('');
   const { connection } = useMultisigData();
 
   const queryClient = useQueryClient();
   const parsedAmount = parseFloat(amount);
   const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0;
   const isMember = useAccess();
-
+  const parseVotingDeadline = (): bigint | null => {
+    try {
+      const deadline = BigInt(votingDeadlineInput);
+      const now = BigInt(Math.floor(Date.now() / 1000));
+      if (deadline <= now) {
+        setDeadlineError('Deadline must be in the future');
+        return null;
+      }
+      return deadline;
+    } catch {
+      setDeadlineError('Invalid unix timestamp');
+      return null;
+    }
+  };
   const [isOpen, setIsOpen] = useState(false);
   const closeDialog = () => setIsOpen(false);
 
@@ -64,6 +76,9 @@ const SendTokens = ({
     if (!wallet.publicKey) {
       throw 'Wallet not connected';
     }
+    setDeadlineError('');
+    const votingDeadline = parseVotingDeadline();
+    if (!votingDeadline) throw 'Invalid voting deadline';
 
     const mintAccountInfo = await connection.getAccountInfo(new PublicKey(mint));
     const TOKEN_PROGRAM = mintAccountInfo?.owner || TOKEN_PROGRAM_ID;
@@ -199,6 +214,13 @@ const SendTokens = ({
         />
         {!isAmountValid && amount.length > 0 && (
           <p className="text-xs text-red-500">Invalid amount</p>
+        )}
+        <Input
+          placeholder="Voting deadline (unix seconds)"
+          onChange={(e) => setVotingDeadlineInput(e.target.value)}
+        />
+        {deadlineError && (
+          <p className="text-xs text-red-500">{deadlineError}</p>
         )}
         <Button
           onClick={() =>
