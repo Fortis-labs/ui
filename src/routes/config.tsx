@@ -48,14 +48,6 @@ const ConfigurationPage = () => {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <Card className="border-border/50 bg-card/80">
               <CardHeader>
-                <CardTitle>Add Member</CardTitle>
-                <CardDescription>Add a new signer</CardDescription>
-              </CardHeader>
-              <CardContent>{/* form */}</CardContent>
-            </Card>
-
-            <Card className="border-border/50 bg-card/80">
-              <CardHeader>
                 <CardTitle>Threshold</CardTitle>
                 <CardDescription>Required approvals</CardDescription>
               </CardHeader>
