@@ -35,17 +35,6 @@ const SettingsPage = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-border/50 bg-card/80 backdrop-blur">
-              <CardHeader>
-                <CardTitle>Program ID</CardTitle>
-                <CardDescription>
-                  Targeted multisig program
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SetProgramIdInput />
-              </CardContent>
-            </Card>
 
             <Card className="border-border/50 bg-card/80 backdrop-blur md:col-span-2">
               <CardHeader>
