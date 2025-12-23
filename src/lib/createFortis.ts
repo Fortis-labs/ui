@@ -3,7 +3,7 @@ import * as web3 from '@solana/web3.js';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
 import * as multisig_ixs from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/instructions';
-import { fromLegacyPublicKey } from '@solana/compat';
+import { fromLegacyPublicKey, fromLegacyTransactionInstruction } from '@solana/compat';
 export async function createMultisig(
   connection: web3.Connection,
   user: PublicKey,
@@ -24,6 +24,7 @@ export async function createMultisig(
       createKey: createKey,
       rentCollector: rentCollector ? rentCollector : null,
     });
+
 
     const tx = new Transaction().add(ix);
 

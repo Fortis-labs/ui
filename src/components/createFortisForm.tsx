@@ -1,9 +1,10 @@
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { createMultisig } from '../lib/createFortis';
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { Keypair, PublicKey, VersionedTransaction } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { CheckSquare, Copy, ExternalLink, PlusCircleIcon, XIcon } from 'lucide-react';
+import { waitForConfirmation } from '../lib/transactionConfirmation'
 import {
   Select,
   SelectContent,
@@ -19,7 +20,9 @@ import { useMultisigData } from '../hooks/useMultisigData';
 import { useMultisigAddress } from '../hooks/useMultisigAddress';
 import { Link } from "react-router-dom";
 import * as error from '@solana/errors';
-
+import * as kit from '@solana/kit';
+import bs58 from "bs58";
+const TX_RETRY_INTERVAL = 2000;
 interface MemberAddresses {
   count: number;
   memberData: PublicKey[];
@@ -33,6 +36,7 @@ interface CreateFortisFormData {
 }
 
 export default function CreateFortisForm({ }: {}) {
+  const wallet = useWallet();
   const { publicKey, connected, sendTransaction } = useWallet();
 
   const { connection, programId } = useMultisigData();
@@ -58,9 +62,11 @@ export default function CreateFortisForm({ }: {}) {
 
   async function submitHandler() {
     if (!connected) throw new Error('Please connect your wallet.');
+    let signature = '';
     try {
-      const createKey = Keypair.generate();
 
+      const createKey = Keypair.generate();
+      const latestBlockHash = await connection.getLatestBlockhash()
       const { transaction, multisig } = await createMultisig(
         connection,
         publicKey!,
@@ -69,35 +75,38 @@ export default function CreateFortisForm({ }: {}) {
         createKey.publicKey,
         formState.values.rentCollector,
       );
-      console.log('Transaction built');
-
-
-      const signature = await sendTransaction(transaction, connection, {
+      if (!wallet.signTransaction) {
+        throw new Error("Wallet does not support signTransaction");
+      }
+      transaction.sign(createKey);
+      const signTrans = await wallet.signTransaction(transaction);
+      const rawTransaction = signTrans.serialize()
+      signature = await connection.sendRawTransaction(rawTransaction, {
         skipPreflight: true,
-        signers: [createKey],
+        maxRetries: 2,
+
       });
-      console.log('Transaction signature', signature);
+
+      const confirmation = await connection.confirmTransaction(
+        {
+          blockhash: latestBlockHash.blockhash,
+          lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+          signature,
+        }
+      );
       toast.loading('Confirming...', {
         id: 'create',
       });
+      console.log('Transaction signature', signature);
+      console.log('confirmation status', confirmation);
 
-      let sent = false;
-      const maxAttempts = 10;
-      const delayMs = 1000;
-      for (let attempt = 0; attempt <= maxAttempts && !sent; attempt++) {
-        const status = await connection.getSignatureStatus(signature);
-        if (status?.value?.confirmationStatus === 'confirmed') {
-          console.log('Transaction confirmed');
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-          sent = true;
-        } else {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-      }
+
+
+
 
       setMultisigAddress.mutate(multisig.toBase58());
 
-      return { signature, multisig: multisig.toBase58() };
+      return { signature: signature, multisig: multisig.toBase58() };
     } catch (error: any) {
       console.error(error);
       return error;
