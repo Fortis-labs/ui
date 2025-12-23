@@ -1,7 +1,6 @@
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from './ui/button';
 import { useWallet } from '@solana/wallet-adapter-react';
-import '@solana/wallet-adapter-react-ui/styles.css';
 
 const ConnectWallet = () => {
   const modal = useWalletModal();

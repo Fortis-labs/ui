@@ -12,7 +12,7 @@ export const useAccess = () => {
   }
   // if the pubkeyKey is in members return true
   //cast Adress[] to PublicKey[]
-  const members = multisig.members.map((addr) => new PublicKey(addr.toString()));
+  const members = multisig.members.map((addr) => new PublicKey(addr));
   const memberExists = isMember(publicKey, members);
   // return true if found
   return !!memberExists;

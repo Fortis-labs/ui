@@ -1,6 +1,6 @@
 import MultisigInput from './MultisigInput';
-import { useMultisigData } from '@/hooks/useMultisigData';
-import Overview from '@/components/Overview';
+import { useMultisigData } from '../hooks/useMultisigData';
+import Overview from '../components/Overview';
 import MultisigLookup from './MultisigLookup';
 
 interface RenderRouteProps {

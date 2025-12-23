@@ -1,7 +1,7 @@
-import { TokenList } from '@/components/TokenList';
-import { VaultDisplayer } from '@/components/VaultDisplayer';
-import { useMultisigData } from '@/hooks/useMultisigData';
-import { ChangeMultisig } from '@/components/ChangeMultisig';
+import { TokenList } from '../components/TokenList';
+import { VaultDisplayer } from '../components/VaultDisplayer';
+import { useMultisigData } from '../hooks/useMultisigData';
+import { ChangeMultisig } from '../components/ChangeMultisig';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useState } from 'react';

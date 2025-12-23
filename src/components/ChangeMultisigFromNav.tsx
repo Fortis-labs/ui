@@ -13,7 +13,7 @@ export const ChangeMultisigFromNav = () => {
 
   return (
     <Button className={`mb-2 w-full bg-gray-500`} onClick={handleChangeMultisig}>
-      Switch Squad
+      Switch Fortis
     </Button>
   );
 };

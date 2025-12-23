@@ -5,7 +5,13 @@ import { Suspense } from 'react';
 const Index = () => {
   return (
     <ErrorBoundary>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+            Loading…
+          </div>
+        }
+      >
         <RenderMultisigRoute />
       </Suspense>
     </ErrorBoundary>

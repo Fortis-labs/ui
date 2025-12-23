@@ -1,6 +1,6 @@
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { createMultisig } from '../lib/createSquad';
+import { createMultisig } from '../lib/createFortis';
 import { Keypair, PublicKey } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { CheckSquare, Copy, ExternalLink, PlusCircleIcon, XIcon } from 'lucide-react';
@@ -13,33 +13,33 @@ import {
   SelectValue,
 } from './ui/select';
 import { toast } from 'sonner';
-import { isPublickey } from '@/lib/isPublickey';
-import { ValidationRules, useSquadForm } from '@/lib/hooks/useSquadForm';
-import { useMultisigData } from '@/hooks/useMultisigData';
-import { useMultisigAddress } from '@/hooks/useMultisigAddress';
+import { isPublickey } from '../lib/isPublickey';
+import { ValidationRules, useFortisForm } from '../lib/hooks/useFortisForm';
+import { useMultisigData } from '../hooks/useMultisigData';
+import { useMultisigAddress } from '../hooks/useMultisigAddress';
 import { Link } from "react-router-dom";
+import * as error from '@solana/errors';
 
 interface MemberAddresses {
   count: number;
   memberData: PublicKey[];
 }
 
-interface CreateSquadFormData {
+interface CreateFortisFormData {
   members: MemberAddresses;
   threshold: number;
   rentCollector: string;
-  configAuthority: string;
   createKey: string;
 }
 
-export default function CreateSquadForm({ }: {}) {
+export default function CreateFortisForm({ }: {}) {
   const { publicKey, connected, sendTransaction } = useWallet();
 
   const { connection, programId } = useMultisigData();
   const { setMultisigAddress } = useMultisigAddress();
   const validationRules = getValidationRules();
 
-  const { formState, handleChange, onSubmit } = useSquadForm<{
+  const { formState, handleChange, handleAddMember, onSubmit } = useFortisForm<{
     signature: string;
     multisig: string;
   }>(
@@ -69,6 +69,8 @@ export default function CreateSquadForm({ }: {}) {
         createKey.publicKey,
         formState.values.rentCollector,
       );
+      console.log('Transaction built');
+
 
       const signature = await sendTransaction(transaction, connection, {
         skipPreflight: true,
@@ -85,6 +87,7 @@ export default function CreateSquadForm({ }: {}) {
       for (let attempt = 0; attempt <= maxAttempts && !sent; attempt++) {
         const status = await connection.getSignatureStatus(signature);
         if (status?.value?.confirmationStatus === 'confirmed') {
+          console.log('Transaction confirmed');
           await new Promise((resolve) => setTimeout(resolve, delayMs));
           sent = true;
         } else {
@@ -107,59 +110,60 @@ export default function CreateSquadForm({ }: {}) {
     <>
       <div className="grid grid-cols-8 gap-4 mb-6">
         {/* Members input */}
-        <div className="col-span-6 flex-col space-y-2">
-          <label htmlFor="members" className="font-medium">
+        <div className="col-span-6 space-y-2">
+          <label className="font-medium">
             Members <span className="text-red-600">*</span>
           </label>
 
           {formState.values.members.memberData.map((member: PublicKey, i: number) => (
-            <div key={i} className="grid grid-cols-3 items-center gap-2">
-              <div className="relative col-span-2">
-                <Input
-                  defaultValue={member ? member.toBase58() : ''}
-                  placeholder={`Member key ${i + 1}`}
-                  onChange={(e) => {
-                    handleChange('members', {
-                      count: formState.values.members.count,
-                      memberData: formState.values.members.memberData.map((m: PublicKey, index: number) => {
-                        if (index === i) {
-                          let newKey: PublicKey | null = null;
-                          try {
-                            if (e.target.value) {
-                              newKey = new PublicKey(e.target.value);
-                            }
-                          } catch {
-                            console.error('Invalid public key input');
-                          }
-                          return { ...m, key: newKey };
-                        }
-                        return m;
-                      }),
-                    });
-                  }}
-                />
+            <div key={i} className="relative flex items-center gap-2">
+              <Input
+                value={member ? member.toBase58() : ""}
+                placeholder={`Member public key ${i + 1}`}
+                onChange={(e) => {
+                  handleChange("members", {
+                    count: formState.values.members.count,
+                    memberData: formState.values.members.memberData.map((m: PublicKey, idx: number) => {
+                      if (idx !== i) return m;
 
-                {i > 0 && (
-                  <XIcon
-                    onClick={() => {
-                      handleChange('members', {
-                        count: formState.values.members.count,
-                        memberData: formState.values.members.memberData.filter(
-                          (_: PublicKey, index: number) => index !== i
-                        ),
-                      });
-                    }}
-                    className="absolute inset-y-3 right-2 w-4 h-4 text-zinc-400 hover:text-zinc-600"
-                  />
-                )}
-              </div>
+                      try {
+                        return e.target.value
+                          ? new PublicKey(e.target.value)
+                          : null;
+                      } catch {
+                        return null;
+                      }
+                    }),
+                  });
+                }}
+              />
+
+              {i > 0 && (
+                <XIcon
+                  onClick={() =>
+                    handleChange("members", {
+                      count: formState.values.members.count - 1,
+                      memberData: formState.values.members.memberData.filter(
+                        (_: PublicKey, idx: number) => idx !== i
+                      ),
+                    })
+                  }
+                  className="w-4 h-4 cursor-pointer text-muted-foreground hover:text-foreground"
+                />
+              )}
             </div>
           ))}
 
-
+          <button
+            onClick={(e) => handleAddMember(e)}
+            className="mt-2 flex gap-1 items-center text-zinc-400 hover:text-zinc-600"
+          >
+            <PlusCircleIcon className="w-4 h-4" />
+            Add member
+          </button>
 
           {formState.errors.members && (
-            <div className="mt-1.5 text-red-500 text-xs">{formState.errors.members}</div>
+            <p className="text-xs text-red-500">{formState.errors.members}</p>
           )}
         </div>
 
@@ -191,17 +195,7 @@ export default function CreateSquadForm({ }: {}) {
             onChange={(e) => handleChange('rentCollector', e.target.value)}
           />
         </div>
-        <div className="col-span-4 flex-col space-y-2">
-          <label htmlFor="configAuthority" className="font-medium">
-            Config Authority
-          </label>
-          <Input
-            type="text"
-            placeholder="Optional config authority"
-            defaultValue={formState.values.configAuthority}
-            onChange={(e) => handleChange('configAuthority', e.target.value)}
-          />
-        </div>
+
       </div>
 
       <Button
@@ -216,12 +210,12 @@ export default function CreateSquadForm({ }: {}) {
                   <CheckSquare className="w-4 h-4 text-green-600" />
                   <div className="flex flex-col space-y-0.5">
                     <p className="font-semibold">
-                      Squad Created:{' '}
+                      Fortis Created:{' '}
                       <span className="font-normal">
                         {res.multisig.slice(0, 4) + '...' + res.multisig.slice(-4)}
                       </span>
                     </p>
-                    <p className="font-light">Your new Squad has been set as active.</p>
+                    <p className="font-light">Your new Fortis has been set as active.</p>
                   </div>
                 </div>
                 <div className="flex gap-2 items-center">
@@ -242,11 +236,11 @@ export default function CreateSquadForm({ }: {}) {
                 </div>
               </div>
             ),
-            error: (e) => `Failed to create squad: ${e}`,
+            error: (e) => `Failed to create fortis: ${e}`,
           })
         }
       >
-        Create Squad
+        Create Fortis
       </Button>
     </>
 
@@ -255,6 +249,7 @@ export default function CreateSquadForm({ }: {}) {
 
 function getValidationRules(): ValidationRules {
   return {
+
     threshold: async (value: number) => {
       if (value < 1) return 'Threshold must be greater than 0';
       return null;
@@ -264,11 +259,7 @@ function getValidationRules(): ValidationRules {
       if (!valid) return 'Rent collector must be a valid public key';
       return null;
     },
-    configAuthority: async (value: string) => {
-      const valid = isPublickey(value);
-      if (!valid) return 'Config authority must be a valid public key';
-      return null;
-    },
+
     members: async (value: { count: number; memberData: PublicKey[] }) => {
       if (value.count < 1) return 'At least one member is required';
 
@@ -288,5 +279,6 @@ function getValidationRules(): ValidationRules {
 
       return null;
     },
+
   };
 }

@@ -111,7 +111,7 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
     <div className="mx-auto w-full max-w-4xl space-y-4 px-4 py-6 sm:px-6 md:py-10 lg:px-8">
       <h1>Search for Multisig Config Address</h1>
       <p className="text-sm text-gray-500">
-        If you can't access your settings in main Squads app UI to find the multisig config address,
+        If you can't access your settings in main fortis app UI to find the multisig config address,
         enter your vault address below to do a search via onchain call.
       </p>
       <Input
@@ -176,10 +176,10 @@ const processTransaction = async (
   connection: Connection,
   programId: PublicKey
 ) => {
-  const includesSquadsProgram = tx.transaction.message.staticAccountKeys.find((val) =>
+  const includesFortisProgram = tx.transaction.message.staticAccountKeys.find((val) =>
     val.equals(programId)
   );
-  if (includesSquadsProgram) {
+  if (includesFortisProgram) {
     const { addressTableLookups } = tx.transaction.message;
     const altAddresses = addressTableLookups.map((addressTableLookup) =>
       addressTableLookup.accountKey.toBase58()

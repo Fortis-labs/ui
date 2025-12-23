@@ -11,7 +11,7 @@ export function VaultDisplayer({ }: VaultDisplayerProps) {
   return (
     <Card className="w-fit my-3">
       <CardHeader>
-        <CardTitle>Squads Vault</CardTitle>
+        <CardTitle>Fortis Vault</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="mb-1">Address: {vaultAddress?.toBase58()}</p>

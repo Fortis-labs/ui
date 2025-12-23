@@ -1,24 +1,26 @@
 'use client';
-import CreateSquadForm from '../components/CreateSquadForm';
+import CreateFortisForm from '../components/createFortisForm';
 import { Card, CardContent } from '../components/ui/card';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
-export default function CreateSquad() {
+const CreateFortis = () => {
   return (
     <ErrorBoundary>
-      <div className="">
-        <div className="mb-4 flex-col space-y-1">
-          <h1 className="text-3xl font-bold">Create a Squad</h1>
-          <h3 className="text-base text-slate-500">
-            Create a Squad and set it as your default account.
-          </h3>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Create Fortis</h1>
+          <p className="text-sm text-muted-foreground">
+            Create a new multisig and set it as default
+          </p>
         </div>
-        <Card className="pt-5">
-          <CardContent>
-            <CreateSquadForm />
+
+        <Card className="border-border/50 bg-card/80 backdrop-blur">
+          <CardContent className="pt-6">
+            <CreateFortisForm />
           </CardContent>
         </Card>
       </div>
     </ErrorBoundary>
   );
-}
+};
+export default CreateFortis;

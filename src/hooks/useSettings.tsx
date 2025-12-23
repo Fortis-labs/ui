@@ -2,7 +2,7 @@ import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts
 // top level
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 
-const DEFAULT_RPC_URL = 'https://api.mainnet-beta.solana.com'; // Default fallback
+const DEFAULT_RPC_URL = 'https://api.devnet.solana.com'; // Default fallback
 
 const getRpcUrl = () => {
   if (typeof document !== 'undefined') {

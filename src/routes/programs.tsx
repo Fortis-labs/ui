@@ -63,7 +63,7 @@ const ProgramsPage = () => {
             <CardHeader>
               <CardTitle>Program</CardTitle>
               <CardDescription>
-                Enter the Program ID for a program under Squad authority. Upon validation, you will
+                Enter the Program ID for a program under fortis authority. Upon validation, you will
                 have the ability to upgrade and modify its authority settings.
               </CardDescription>
             </CardHeader>

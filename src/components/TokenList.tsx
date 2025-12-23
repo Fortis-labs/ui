@@ -14,6 +14,7 @@ export function TokenList({ multisigPda, votingDeadline }: TokenListProps) {
   const { programId } = useMultisigData();
   const { data: solBalance = 0 } = useBalance();
   const { data: tokens = null } = useGetTokens();
+
   return (
     <Card>
       <CardHeader>
@@ -31,12 +32,12 @@ export function TokenList({ multisigPda, votingDeadline }: TokenListProps) {
                 </p>
               </div>
               <div className="ml-auto">
-                <SendSol multisigPda={multisigPda}
-                  votingDeadline={votingDeadline} />
+                <SendSol multisigPda={multisigPda} votingDeadline={votingDeadline} />
               </div>
             </div>
             {tokens && tokens.length > 0 ? <hr className="mt-2" /> : null}
           </div>
+
           {tokens &&
             tokens.map((token) => (
               <div key={token.account.data.parsed.info.mint}>

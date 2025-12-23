@@ -9,7 +9,8 @@ import {
 import * as bs58 from 'bs58';
 import { Button } from './ui/button';
 import { useState } from 'react';
-import * as multisig from '@sqds/multisig';
+import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
+import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Message, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { Input } from './ui/input';
@@ -37,10 +38,8 @@ const CreateTransaction = ({ votingDeadline }: CreateTransactionProps) => {
     invariant(multisigAddress, 'Multisig address not found. Please create a multisig first.');
     invariant(wallet.publicKey, 'Wallet ID not found');
     let memo = 'Hello from Solana land!';
-    const vaultAddress = multisig.getVaultPda({
-      index: 0,
+    const vaultAddress = multisig_pda.getVaultPda({
       multisigPda: new PublicKey(multisigAddress),
-      programId: programId,
     })[0];
 
     const dummyMessage = Message.compile({

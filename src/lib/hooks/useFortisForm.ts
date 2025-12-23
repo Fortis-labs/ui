@@ -20,7 +20,7 @@ export interface FormState {
   isLoading: boolean;
 }
 
-export function useSquadForm<T>(
+export function useFortisForm<T>(
   initialValues: FormValues,
   validationRules: ValidationRules
 ) {
@@ -41,6 +41,14 @@ export function useSquadForm<T>(
     },
     [validationRules]
   );
+  const handleAddMember = (e: any) => {
+    e.preventDefault();
+    handleChange("members", {
+      count: formState.values.members.count + 1,
+      memberData: [...formState.values.members.memberData, null],
+    });
+  };
+
 
   const handleChange = useCallback(
     async (field: string, value: any) => {
@@ -86,5 +94,5 @@ export function useSquadForm<T>(
     }
   };
 
-  return { formState, handleChange, onSubmit };
+  return { formState, handleChange, handleAddMember, onSubmit };
 }

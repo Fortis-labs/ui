@@ -9,45 +9,68 @@ const ConfigurationPage = () => {
   const { rpcUrl, multisigAddress, programId } = useMultisigData();
   const { data: multisigConfig } = useMultisig();
 
+
   return (
     <ErrorBoundary>
-      <Suspense fallback={<div>Loading...</div>}>
-        <div>
-          <h1 className="mb-4 text-3xl font-bold">Multisig Configuration</h1>
+      <Suspense fallback={<div className="text-muted-foreground">Loading…</div>}>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold">Multisig Configuration</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage members and threshold settings
+            </p>
+          </div>
 
-          <Card>
+          {/* Members */}
+          <Card className="border-border/50 bg-card/80 backdrop-blur">
             <CardHeader>
               <CardTitle>Members</CardTitle>
               <CardDescription>
-                List of members in the multisig.
+                Accounts participating in this multisig
               </CardDescription>
             </CardHeader>
 
-            <CardContent>
-              <div className="space-y-6">
-                {multisigConfig &&
-                  multisigConfig.members.map((member) => (
-                    <div key={member.toString()}>
-                      <p className="text-sm font-medium">
-                        Public Key: {member.toString()}
-                      </p>
-                      <hr className="mt-2" />
-                    </div>
-                  ))}
-              </div>
+            <CardContent className="space-y-4">
+              {multisigConfig?.members.map((member) => (
+                <div
+                  key={member}
+                  className="flex items-center justify-between rounded-md border border-border/40 bg-muted/40 px-4 py-3"
+                >
+                  <span className="truncate font-mono text-sm">
+                    {member}
+                  </span>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
-          {multisigConfig && (
-            <Card className="mt-4">
+          {/* Actions */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Card className="border-border/50 bg-card/80">
+              <CardHeader>
+                <CardTitle>Add Member</CardTitle>
+                <CardDescription>Add a new signer</CardDescription>
+              </CardHeader>
+              <CardContent>{/* form */}</CardContent>
+            </Card>
+
+            <Card className="border-border/50 bg-card/80">
               <CardHeader>
                 <CardTitle>Threshold</CardTitle>
+                <CardDescription>Required approvals</CardDescription>
               </CardHeader>
-              <CardContent>
-                <span>Current Threshold: {multisigConfig.threshold}</span>
+              <CardContent className="text-sm">
+                {multisigConfig && (
+                  <span className="text-foreground">
+                    Current threshold:{" "}
+                    <span className="font-semibold">
+                      {multisigConfig.threshold}
+                    </span>
+                  </span>
+                )}
               </CardContent>
             </Card>
-          )}
+          </div>
         </div>
       </Suspense>
     </ErrorBoundary>

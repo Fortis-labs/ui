@@ -35,8 +35,8 @@ export default function TabNav() {
                   <Link
                     to={tab.route}
                     className={`flex items-center rounded-lg px-4 py-3 text-slate-900 ${(path!.startsWith(`${tab.route}/`) && tab.route !== '/') || tab.route === path
-                        ? 'bg-slate-400'
-                        : 'hover:bg-slate-400'
+                      ? 'bg-slate-400'
+                      : 'hover:bg-slate-400'
                       }`}
                   >
                     {tab.icon}
