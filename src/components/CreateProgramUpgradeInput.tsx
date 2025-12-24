@@ -38,7 +38,11 @@ type CreateProgramUpgradeInputProps = {
   programInfos: SimplifiedProgramInfo;
   transactionIndex: number
 };
-const CreateProgramUpgradeInput = ({ programInfos, transactionIndex }: CreateProgramUpgradeInputProps) => {
+
+const CreateProgramUpgradeInput = ({
+  programInfos,
+  transactionIndex,
+}: CreateProgramUpgradeInputProps) => {
   const queryClient = useQueryClient();
   const wallet = useWallet();
   const { connection, multisigVault, multisigAddress } = useMultisigData();
@@ -54,7 +58,9 @@ const CreateProgramUpgradeInput = ({ programInfos, transactionIndex }: CreatePro
 
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; }
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const parseVotingDeadline = (): bigint | null => {
@@ -115,7 +121,8 @@ const CreateProgramUpgradeInput = ({ programInfos, transactionIndex }: CreatePro
   };
 
   const performUpgrade = async () => {
-    if (!wallet.publicKey || !multisigVault || !multisigAddress) throw new Error('Missing wallet or multisig');
+    if (!wallet.publicKey || !multisigVault || !multisigAddress)
+      throw new Error('Missing wallet or multisig');
 
     setDeadlineError('');
     const votingDeadline = parseVotingDeadline();
@@ -140,11 +147,13 @@ const CreateProgramUpgradeInput = ({ programInfos, transactionIndex }: CreatePro
     const blockhash = (await connection.getLatestBlockhash()).blockhash;
 
     const transactionMessage = new TransactionMessage({
-      instructions: [new TransactionInstruction({
-        programId: new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111'),
-        data: upgradeData,
-        keys,
-      })],
+      instructions: [
+        new TransactionInstruction({
+          programId: new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111'),
+          data: upgradeData,
+          keys,
+        }),
+      ],
       payerKey: vault,
       recentBlockhash: blockhash,
     });
@@ -187,56 +196,71 @@ const CreateProgramUpgradeInput = ({ programInfos, transactionIndex }: CreatePro
 
   return (
     <div className="space-y-3">
-      <Input placeholder="Buffer Address" value={bufferAddress} onChange={(e) => setBufferAddress(e.target.value)} />
-      <Input placeholder="Spill Address" value={spillAddress} onChange={(e) => setSpillAddress(e.target.value)} />
+      <Input
+        placeholder="Buffer Address"
+        value={bufferAddress}
+        onChange={(e) => setBufferAddress(e.target.value)}
+      />
+      <Input
+        placeholder="Spill Address"
+        value={spillAddress}
+        onChange={(e) => setSpillAddress(e.target.value)}
+      />
       <Input
         placeholder="Voting period (days)"
         type="number"
         min={1}
         value={votingDays}
-        onChange={(e) => { setVotingDays(e.target.value); setDeadlineError(''); }}
+        onChange={(e) => {
+          setVotingDays(e.target.value);
+          setDeadlineError('');
+        }}
       />
       {deadlineError && <p className="text-xs text-red-500">{deadlineError}</p>}
 
-      <Button onClick={handleCreateUpgrade}>Create Upgrade</Button>
+      <Button onClick={handleCreateUpgrade} className="w-full">
+        Create Upgrade
+      </Button>
 
       <Dialog open={showBufferDialog} onOpenChange={setShowBufferDialog}>
-        <DialogContent className="max-w-lg w-full p-6 rounded-lg border border-yellow-400 shadow-lg">
+        <DialogContent className="max-w-lg w-full p-6 rounded-lg border border-yellow-400/50 bg-background shadow-lg">
           <DialogHeader>
-            <DialogTitle className="text-yellow-800">Buffer Authority Not Vault</DialogTitle>
-            <DialogDescription className="text-yellow-700">
-              The buffer authority is not the vault. Set the buffer authority to the vault before creating the upgrade.
+            <DialogTitle className="text-yellow-800 dark:text-yellow-200">
+              Buffer Authority Not Vault
+            </DialogTitle>
+            <DialogDescription className="text-yellow-700 dark:text-yellow-300">
+              The buffer authority is not the vault. Set the buffer authority to the vault before
+              creating the upgrade.
             </DialogDescription>
           </DialogHeader>
 
           <div className="mt-4">
-            <p className="text-sm mb-1">Current Buffer Authority</p>
-            <div className="rounded-md bg-neutral-900 p-2 overflow-x-auto">
-              <code className="font-mono text-sm text-neutral-100 break-all">
-                {currentAuthority || 'Unknown'}
-              </code>
+            <p className="text-sm mb-1 text-foreground">Current Buffer Authority</p>
+            <div className="rounded-md bg-muted p-2 overflow-x-auto font-mono text-sm break-all">
+              {currentAuthority || 'Unknown'}
             </div>
           </div>
 
           <div className="mt-4">
-            <p className="text-sm mb-1">Set vault as buffer authority using:</p>
-
-            <div className="rounded-md bg-neutral-900 p-3 overflow-x-auto border border-neutral-700">
-              <code className="block font-mono text-xs text-neutral-100 break-all">
-                solana program set-buffer-authority {bufferAddress} --new-buffer-authority {multisigVault?.toString()}
+            <p className="text-sm mb-1 text-foreground">Set vault as buffer authority using:</p>
+            <div className="rounded-md bg-muted p-3 overflow-x-auto border border-muted-foreground/20">
+              <code className="block font-mono text-xs break-all">
+                solana program set-buffer-authority {bufferAddress} --new-buffer-authority{' '}
+                {multisigVault?.toString()}
               </code>
             </div>
           </div>
 
-          <DialogFooter className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowBufferDialog(false)}>Cancel</Button>
+          <DialogFooter className="mt-6 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowBufferDialog(false)}>
+              Close
+            </Button>
             <Button onClick={handleVerifyAuthority}>Verify</Button>
           </DialogFooter>
-
-          <DialogClose />
         </DialogContent>
       </Dialog>
     </div>
   );
 };
+
 export default CreateProgramUpgradeInput;

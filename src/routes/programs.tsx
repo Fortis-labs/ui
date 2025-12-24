@@ -22,7 +22,6 @@ import { SimplifiedProgramInfo } from '../hooks/useProgram';
 import CreateProgramUpgradeInput from '../components/CreateProgramUpgradeInput';
 import { useMultisigData } from '../hooks/useMultisigData';
 
-
 const ProgramsPage = () => {
   const { data: multisigConfig } = useMultisig();
   const { connection, multisigVault: vaultAddress } = useMultisigData();
@@ -95,10 +94,8 @@ const ProgramsPage = () => {
       setProgramInfos(info);
 
       if (info.authority === vaultAddressStr) {
-        // Authority matches — no dialog, just ready for actions
         setShowDialog(false);
       } else {
-        // Open dialog
         setCurrentAuthority(info.authority);
         setShowDialog(true);
       }
@@ -119,15 +116,12 @@ const ProgramsPage = () => {
       const info = await getSimplifiedProgramInfos(validatedProgramId);
       if (!mountedRef.current) return;
 
-      setProgramInfos(info); // update globally
+      setProgramInfos(info);
 
       if (info.authority === vaultAddressStr) {
-        // ✅ Now owned by vault — close dialog and show action cards
         setShowDialog(false);
       } else {
-        // ❌ Still not owned — update dialog content
         setCurrentAuthority(info.authority);
-        // Dialog stays open automatically
       }
     } catch (err: any) {
       toast.error(err.message || 'Failed to verify authority');
@@ -186,7 +180,6 @@ const ProgramsPage = () => {
                 )}
               </div>
 
-              {/* Show program info if available (even in dialog) */}
               {programInfos && !showDialog && (
                 <Card className="border-muted">
                   <CardHeader className="pb-2">
@@ -205,7 +198,6 @@ const ProgramsPage = () => {
                 </Card>
               )}
 
-              {/* Action cards — only if vault is authority AND dialog is closed */}
               {validatedProgramId && isVaultAuthority && !showDialog && (
                 <div className="grid gap-4 md:grid-cols-2">
                   <Card>
@@ -243,38 +235,34 @@ const ProgramsPage = () => {
           </Card>
 
           {/* Authority Verification Dialog */}
-          <Dialog open={showDialog} onOpenChange={(open) => {
-            if (!open) {
-              setShowDialog(false);
-              // optionally clear state, but we keep programInfos for info
-            }
-          }}>
-            <DialogContent className="sm:max-w-[500px]">
+          <Dialog open={showDialog} onOpenChange={(open) => !open && setShowDialog(false)}>
+            <DialogContent className="max-w-lg w-full p-6 rounded-lg border border-yellow-400/50 bg-background shadow-lg">
               <DialogHeader>
-                <DialogTitle>Program Not Managed by Fortis</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <p className="text-sm text-muted-foreground">
+                <DialogTitle className="text-yellow-800 dark:text-yellow-200">
+                  Program Not Managed by Fortis
+                </DialogTitle>
+                <DialogDescription className="text-yellow-700 dark:text-yellow-300">
                   The current upgrade authority is not the Fortis vault.
-                </p>
+                </DialogDescription>
+              </DialogHeader>
 
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Current Upgrade Authority</p>
-                  <p className="font-mono text-sm break-all bg-muted p-2 rounded">
-                    {currentAuthority || 'Unknown'}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Transfer authority using:</p>
-                  <pre className="text-xs font-mono bg-muted p-2 rounded mt-1 overflow-x-auto">
-                    {`solana program set-upgrade-authority ${validatedProgramId} \\
---new-upgrade-authority ${vaultAddressStr} \\
---skip-new-upgrade-authority-signer-check`}
-                  </pre>
+              <div className="mt-4">
+                <p className="text-sm mb-1 text-foreground">Current Upgrade Authority</p>
+                <div className="rounded-md bg-muted p-2 overflow-x-auto font-mono text-sm break-all">
+                  {currentAuthority || 'Unknown'}
                 </div>
               </div>
-              <DialogFooter className="gap-2">
+
+              <div className="mt-4">
+                <p className="text-sm mb-1 text-foreground">Transfer authority using:</p>
+                <div className="rounded-md bg-muted p-3 overflow-x-auto border border-muted-foreground/20">
+                  <code className="block font-mono text-xs break-all">{`solana program set-upgrade-authority ${validatedProgramId}
+--new-upgrade-authority ${vaultAddressStr} 
+--skip-new-upgrade-authority-signer-check`}</code>
+                </div>
+              </div>
+
+              <DialogFooter className="mt-6 flex justify-end gap-2">
                 <Button
                   variant="outline"
                   onClick={() => setShowDialog(false)}
@@ -282,10 +270,7 @@ const ProgramsPage = () => {
                 >
                   Close
                 </Button>
-                <Button
-                  onClick={handleVerifyAuthority}
-                  disabled={isLoading}
-                >
+                <Button onClick={handleVerifyAuthority} disabled={isLoading}>
                   {isLoading ? 'Verifying...' : 'Verify'}
                 </Button>
               </DialogFooter>
