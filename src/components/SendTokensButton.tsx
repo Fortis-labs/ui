@@ -47,7 +47,7 @@ const SendTokens = ({
   const walletModal = useWalletModal();
   const [amount, setAmount] = useState<string>('');
   const [recipient, setRecipient] = useState('');
-  const [votingDeadlineInput, setVotingDeadlineInput] = useState('');
+  const [votingDays, setVotingDays] = useState<string>('');
   const [deadlineError, setDeadlineError] = useState('');
   const { connection } = useMultisigData();
 
@@ -57,18 +57,23 @@ const SendTokens = ({
   const isMember = useAccess();
   const parseVotingDeadline = (): bigint | null => {
     try {
-      const deadline = BigInt(votingDeadlineInput);
-      const now = BigInt(Math.floor(Date.now() / 1000));
-      if (deadline <= now) {
-        setDeadlineError('Deadline must be in the future');
+      const days = Number(votingDays);
+
+      if (isNaN(days) || days <= 0) {
+        setDeadlineError('Voting period must be greater than 0 days');
         return null;
       }
-      return deadline;
+
+      const now = BigInt(Math.floor(Date.now() / 1000));
+      const seconds = BigInt(Math.floor(days * 24 * 60 * 60));
+
+      return now + seconds;
     } catch {
-      setDeadlineError('Invalid unix timestamp');
+      setDeadlineError('Invalid voting period');
       return null;
     }
   };
+
   const [isOpen, setIsOpen] = useState(false);
   const closeDialog = () => setIsOpen(false);
 
@@ -174,6 +179,7 @@ const SendTokens = ({
     }
     setAmount('');
     setRecipient('');
+    setVotingDays('');
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
     closeDialog();
   };
@@ -216,8 +222,10 @@ const SendTokens = ({
           <p className="text-xs text-red-500">Invalid amount</p>
         )}
         <Input
-          placeholder="Voting deadline (unix seconds)"
-          onChange={(e) => setVotingDeadlineInput(e.target.value)}
+          placeholder="Voting period (days)"
+          type="number"
+          min={1}
+          onChange={(e) => { setDeadlineError(''); setVotingDays(e.target.value) }}
         />
         {deadlineError && (
           <p className="text-xs text-red-500">{deadlineError}</p>
@@ -231,7 +239,7 @@ const SendTokens = ({
               error: (e) => `Failed to propose: ${e}`,
             })
           }
-          disabled={!isPublickey(recipient) || amount.length < 1 || !isAmountValid}
+          disabled={!isPublickey(recipient) || amount.length < 1 || !isAmountValid || !votingDays}
         >
           Transfer
         </Button>

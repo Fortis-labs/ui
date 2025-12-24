@@ -6,7 +6,7 @@ import { useMultisigData } from '../hooks/useMultisigData';
 type VaultDisplayerProps = {};
 
 export function VaultDisplayer({ }: VaultDisplayerProps) {
-  const { multisigVault: vaultAddress } = useMultisigData();
+  const { multisigVault: vaultAddress, multisigAddress } = useMultisigData();
 
   return (
     <Card className="w-fit my-3">

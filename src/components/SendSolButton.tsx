@@ -39,8 +39,9 @@ const SendSol = ({ multisigPda }: SendSolProps) => {
   const walletModal = useWalletModal();
   const [amount, setAmount] = useState<string>('');
   const [recipient, setRecipient] = useState('');
-  const [votingDeadlineInput, setVotingDeadlineInput] = useState('');
+  const [votingDays, setVotingDays] = useState<string>('');
   const [deadlineError, setDeadlineError] = useState('');
+
   const { connection, programId } = useMultisigData();
   const queryClient = useQueryClient();
   const parsedAmount = parseFloat(amount);
@@ -48,15 +49,19 @@ const SendSol = ({ multisigPda }: SendSolProps) => {
   const isMember = useAccess();
   const parseVotingDeadline = (): bigint | null => {
     try {
-      const deadline = BigInt(votingDeadlineInput);
-      const now = BigInt(Math.floor(Date.now() / 1000));
-      if (deadline <= now) {
-        setDeadlineError('Deadline must be in the future');
+      const days = Number(votingDays);
+
+      if (isNaN(days) || days <= 0) {
+        setDeadlineError('Voting period must be greater than 0 days');
         return null;
       }
-      return deadline;
+
+      const now = BigInt(Math.floor(Date.now() / 1000));
+      const seconds = BigInt(Math.floor(days * 24 * 60 * 60));
+
+      return now + seconds;
     } catch {
-      setDeadlineError('Invalid unix timestamp');
+      setDeadlineError('Invalid voting period');
       return null;
     }
   };
@@ -136,7 +141,7 @@ const SendSol = ({ multisigPda }: SendSolProps) => {
 
     setAmount('');
     setRecipient('');
-    setVotingDeadlineInput('');
+    setVotingDays('');
     closeDialog();
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
   };
@@ -183,8 +188,10 @@ const SendSol = ({ multisigPda }: SendSolProps) => {
         )}
 
         <Input
-          placeholder="Voting deadline (unix seconds)"
-          onChange={(e) => setVotingDeadlineInput(e.target.value)}
+          placeholder="Voting period (days)"
+          type="number"
+          min={1}
+          onChange={(e) => { setDeadlineError(''); setVotingDays(e.target.value) }}
         />
         {deadlineError && (
           <p className="text-xs text-red-500">{deadlineError}</p>
@@ -194,7 +201,7 @@ const SendSol = ({ multisigPda }: SendSolProps) => {
           disabled={
             !isPublickey(recipient) ||
             !isAmountValid ||
-            !votingDeadlineInput
+            !votingDays
           }
           onClick={() =>
             toast.promise(transfer, {
