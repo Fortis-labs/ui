@@ -7,7 +7,6 @@ import { Toaster } from './components/ui/sonner';
 import TabNav from './components/TabNav';
 
 import HomePage from './routes/_index';
-import ConfigPage from './routes/config';
 import CreatePage from './routes/create';
 import SettingsPage from './routes/settings';
 import TransactionsPage from './routes/transactions';
@@ -33,7 +32,6 @@ const App = () => {
                 <Suspense fallback={<p>Loading...</p>}>
                   <Routes>
                     <Route index path="/" element={<HomePage />} />
-                    <Route path="/config" element={<ConfigPage />} />
                     <Route path="/create" element={<CreatePage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/transactions" element={<TransactionsPage />} />

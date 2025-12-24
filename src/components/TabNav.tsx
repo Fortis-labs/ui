@@ -10,7 +10,6 @@ export default function TabNav() {
   const tabs = [
     { name: 'Home', icon: <LucideHome className="h-5 w-5" />, route: '/' },
     { name: 'Transactions', icon: <ArrowDownUp className="h-5 w-5" />, route: '/transactions' },
-    { name: 'Configuration', icon: <Users className="h-5 w-5" />, route: '/config' },
     { name: 'Programs', icon: <Box className="h-5 w-5" />, route: '/programs' },
     { name: 'Settings', icon: <Settings className="h-5 w-5" />, route: '/settings' },
   ];
