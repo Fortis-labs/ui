@@ -46,7 +46,8 @@ const CreateProgramUpgradeInput = ({
   const queryClient = useQueryClient();
   const wallet = useWallet();
   const { connection, multisigVault, multisigAddress } = useMultisigData();
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [bufferError, setBufferError] = useState('');
   const [bufferAddress, setBufferAddress] = useState('');
   const [spillAddress, setSpillAddress] = useState('');
   const [votingDays, setVotingDays] = useState('');
@@ -83,20 +84,21 @@ const CreateProgramUpgradeInput = ({
   const handleCreateUpgrade = async () => {
     if (!bufferAddress || !spillAddress || !votingDays) return;
 
+    setBufferError('');
+    setIsLoading(true);
+
     try {
       const authority = await getBufferAuthority(bufferAddress);
-
       if (authority !== multisigVault?.toString()) {
-        if (mountedRef.current) {
-          setCurrentAuthority(authority);
-          setShowBufferDialog(true);
-        }
+        setCurrentAuthority(authority);
+        setShowBufferDialog(true);
         return;
       }
-
       await performUpgrade();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to fetch buffer authority');
+      setBufferError(err.message || 'Failed to fetch buffer authority');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -199,8 +201,12 @@ const CreateProgramUpgradeInput = ({
       <Input
         placeholder="Buffer Address"
         value={bufferAddress}
-        onChange={(e) => setBufferAddress(e.target.value)}
+        onChange={(e) => {
+          setBufferAddress(e.target.value)
+          setBufferError(''); // clear on change
+        }}
       />
+      {bufferError && <p className="text-xs text-red-500">{bufferError}</p>}
       <Input
         placeholder="Spill Address"
         value={spillAddress}
@@ -218,9 +224,10 @@ const CreateProgramUpgradeInput = ({
       />
       {deadlineError && <p className="text-xs text-red-500">{deadlineError}</p>}
 
-      <Button onClick={handleCreateUpgrade} className="w-full">
+      <Button onClick={handleCreateUpgrade} disabled={isLoading} className="w-full">
         Create Upgrade
       </Button>
+      {isLoading ? 'Verifying...' : 'Verify'}
 
       <Dialog open={showBufferDialog} onOpenChange={setShowBufferDialog}>
         <DialogContent className="max-w-lg w-full p-6 rounded-lg border border-yellow-400/50 bg-background shadow-lg">
@@ -255,7 +262,8 @@ const CreateProgramUpgradeInput = ({
             <Button variant="outline" onClick={() => setShowBufferDialog(false)}>
               Close
             </Button>
-            <Button onClick={handleVerifyAuthority}>Verify</Button>
+            <Button onClick={handleVerifyAuthority}>  disabled={isLoading}Verify</Button>
+            {isLoading ? 'Verifying...' : 'Verify'}
           </DialogFooter>
         </DialogContent>
       </Dialog>
