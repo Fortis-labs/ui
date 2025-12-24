@@ -20,14 +20,12 @@ const ApproveButton = ({
   transactionIndex,
   proposalStatus,
   programId,
+  disabled
 }: ApproveButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
-
-  const isDisabled = proposalStatus !== 'NotApproved';
-
   const approveProposal = async () => {
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
@@ -35,7 +33,7 @@ const ApproveButton = ({
     }
 
     // HARD GUARD (important)
-    if (isDisabled) {
+    if (disabled) {
       return;
     }
 
@@ -65,7 +63,7 @@ const ApproveButton = ({
 
   return (
     <Button
-      disabled={isDisabled}
+      disabled={disabled}
       onClick={() =>
         toast.promise(approveProposal, {
           id: 'transaction',

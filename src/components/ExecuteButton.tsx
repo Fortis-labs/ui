@@ -41,6 +41,7 @@ const ExecuteButton = ({
   transactionIndex,
   proposalStatus,
   programId,
+  disabled
 }: ExecuteButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const closeDialog = () => setIsOpen(false);
@@ -59,6 +60,11 @@ const ExecuteButton = ({
       walletModal.setVisible(true);
       throw 'Wallet not connected';
     }
+    // HARD GUARD (important)
+    if (disabled) {
+      return;
+    }
+
     const member = wallet.publicKey;
     if (!wallet.signAllTransactions) return;
     let bigIntTransactionIndex = BigInt(transactionIndex);
