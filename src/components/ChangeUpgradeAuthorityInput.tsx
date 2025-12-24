@@ -22,21 +22,38 @@ import { useQueryClient } from '@tanstack/react-query';
 type ChangeUpgradeAuthorityInputProps = {
   programInfos: SimplifiedProgramInfo;
   transactionIndex: number;
-  votingDeadline: bigint;
 };
 
 const ChangeUpgradeAuthorityInput = ({
   programInfos,
   transactionIndex,
-  votingDeadline,
 }: ChangeUpgradeAuthorityInputProps) => {
   const [newAuthority, setNewAuthority] = useState('');
   const wallet = useWallet();
   const walletModal = useWalletModal();
+  const [votingDays, setVotingDays] = useState<string>('');
+  const [deadlineError, setDeadlineError] = useState('');
   const queryClient = useQueryClient();
   const bigIntTransactionIndex = BigInt(transactionIndex);
   const { connection, multisigAddress, programId, multisigVault } = useMultisigData();
+  const parseVotingDeadline = (): bigint | null => {
+    try {
+      const days = Number(votingDays);
 
+      if (isNaN(days) || days <= 0) {
+        setDeadlineError('Voting period must be greater than 0 days');
+        return null;
+      }
+
+      const now = BigInt(Math.floor(Date.now() / 1000));
+      const seconds = BigInt(Math.floor(days * 24 * 60 * 60));
+
+      return now + seconds;
+    } catch {
+      setDeadlineError('Invalid voting period');
+      return null;
+    }
+  };
   const changeUpgradeAuth = async () => {
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
@@ -48,6 +65,9 @@ const ChangeUpgradeAuthorityInput = ({
     if (!multisigAddress) {
       throw 'Multisig not found';
     }
+    setDeadlineError('');
+    const votingDeadline = parseVotingDeadline();
+    if (!votingDeadline) throw 'Invalid voting deadline';
 
     const multisigPda = new PublicKey(multisigAddress);
     const vaultAddress = new PublicKey(multisigVault);
@@ -124,6 +144,7 @@ const ChangeUpgradeAuthorityInput = ({
     if (!sent[0]) {
       throw `Transaction failed or unable to confirm. Check ${signature}`;
     }
+    setVotingDays('');
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
   };
   return (
@@ -133,6 +154,12 @@ const ChangeUpgradeAuthorityInput = ({
         type="text"
         onChange={(e) => setNewAuthority(e.target.value)}
         className="mb-3"
+      />
+      <Input
+        placeholder="Voting period (days)"
+        type="number"
+        min={1}
+        onChange={(e) => { setDeadlineError(''); setVotingDays(e.target.value) }}
       />
       <Button
         onClick={() =>

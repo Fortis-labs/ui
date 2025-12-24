@@ -9,191 +9,182 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Suspense, useState } from 'react';
 import { useProgram } from '../hooks/useProgram';
 import CreateProgramUpgradeInput from '../components/CreateProgramUpgradeInput';
-
+import { useMultisigData } from '../hooks/useMultisigData';
 const ProgramsPage = () => {
   const { data: multisigConfig } = useMultisig();
+  const { multisigVault: vaultAddress } = useMultisigData();
 
-  // State for program ID input and validation
-  const [votingDeadlineInput, setVotingDeadlineInput] = useState('');
-  const [votingDeadline, setVotingDeadline] = useState<bigint | null>(null);
-  const [votingDeadlineError, setVotingDeadlineError] = useState('');
   const [programIdInput, setProgramIdInput] = useState('');
   const [programIdError, setProgramIdError] = useState('');
   const [validatedProgramId, setValidatedProgramId] = useState<string | null>(null);
 
-  // Only use the hook when we have a validated program ID
   const { data: programInfos } = useProgram(validatedProgramId);
 
-  // Validate the program ID
+  const vaultAddressStr = vaultAddress?.toString() ?? null;
+
+  const isVaultAuthority =
+    !!programInfos?.authority && programInfos.authority === vaultAddressStr;
+
   const validateProgramId = () => {
-    // Reset error state
     setProgramIdError('');
 
-    // Empty check
     if (!programIdInput.trim()) {
       setProgramIdError('Program ID is required');
       return;
     }
 
-    // Try to validate as PublicKey
     try {
       new PublicKey(programIdInput);
-      // If we get here, it's a valid PublicKey format
       setValidatedProgramId(programIdInput);
-    } catch (error) {
+    } catch {
       setProgramIdError('Invalid Program ID format');
     }
   };
 
-  // Clear program ID and related data
   const clearProgramId = () => {
     setProgramIdInput('');
     setValidatedProgramId(null);
     setProgramIdError('');
-    setVotingDeadline(null);
-    setVotingDeadlineInput('');
-    setVotingDeadlineError('');
   };
+
   return (
     <ErrorBoundary>
       <Suspense fallback={<div>Loading...</div>}>
-        <div className="">
-          <h1 className="mb-4 text-3xl font-bold">Program Manager</h1>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold">Program Manager</h1>
+
+          {/* Program ID Input */}
           <Card>
             <CardHeader>
               <CardTitle>Program</CardTitle>
               <CardDescription>
-                Enter the Program ID for a program under fortis authority. Upon validation, you will
-                have the ability to upgrade and modify its authority settings.
+                Enter a Program ID to manage upgrades and authority using Fortis.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Enter Program ID"
-                      value={programIdInput}
-                      onChange={(e) => setProgramIdInput(e.target.value)}
-                      className={programIdError ? 'border-red-500' : ''}
-                    />
-                    {programIdError && (
-                      <p className="mt-1 text-sm text-red-500">{programIdError}</p>
-                    )}
-                  </div>
-                  <Button onClick={validateProgramId}>Validate</Button>
-                  {validatedProgramId && (
-                    <Button variant="outline" onClick={clearProgramId}>
-                      Clear
-                    </Button>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Voting Deadline (Unix timestamp, seconds)
-                  </label>
 
+            <CardContent className="space-y-4">
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
                   <Input
-                    placeholder="e.g. 1735689600"
-                    value={votingDeadlineInput}
-                    onChange={(e) => setVotingDeadlineInput(e.target.value)}
-                    className={votingDeadlineError ? 'border-red-500' : ''}
+                    placeholder="Enter Program ID"
+                    value={programIdInput}
+                    onChange={(e) => setProgramIdInput(e.target.value)}
+                    className={programIdError ? 'border-red-500' : ''}
                   />
-
-                  {votingDeadlineError && (
-                    <p className="text-sm text-red-500">{votingDeadlineError}</p>
-                  )}
-
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setVotingDeadlineError('');
-
-                      if (!votingDeadlineInput.trim()) {
-                        setVotingDeadlineError('Voting deadline is required');
-                        return;
-                      }
-
-                      try {
-                        const deadline = BigInt(votingDeadlineInput);
-                        const now = BigInt(Math.floor(Date.now() / 1000));
-
-                        if (deadline <= now) {
-                          setVotingDeadlineError('Deadline must be in the future');
-                          return;
-                        }
-
-                        setVotingDeadline(deadline);
-                      } catch {
-                        setVotingDeadlineError('Invalid integer value');
-                      }
-                    }}
-                  >
-                    Set Voting Deadline
-                  </Button>
-
-                  {votingDeadline && (
-                    <p className="text-xs text-muted-foreground">
-                      UTC: {new Date(Number(votingDeadline) * 1000).toUTCString()}
-                    </p>
+                  {programIdError && (
+                    <p className="mt-1 text-sm text-red-500">{programIdError}</p>
                   )}
                 </div>
-                {validatedProgramId && programInfos && (
-                  <div className="mt-4">
-                    <h3 className="text-lg font-medium">Program Information</h3>
-                    <pre className="mt-2 overflow-auto rounded bg-gray-100 p-4">
-                      <div>Program Data Address: {programInfos.programDataAddress}</div>
-                      <div>Program Authority: {programInfos.authority || 'Immutable'}</div>
-                    </pre>
-                  </div>
-                )}
 
-                {validatedProgramId && !programInfos && (
-                  <div className="mt-4 rounded bg-yellow-50 p-4 text-yellow-800">
-                    No program found with this ID or unable to fetch program data.
-                  </div>
+                <Button onClick={validateProgramId}>Validate</Button>
+
+                {validatedProgramId && (
+                  <Button variant="outline" onClick={clearProgramId}>
+                    Clear
+                  </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
-          {multisigConfig && programInfos && votingDeadline && (
-            <div className="mt-4 flex flex-col gap-4 pb-4 md:flex-row">
-              <div className="flex-1">
-                <Card className="h-full">
+
+              {/* Program not found */}
+              {validatedProgramId && !programInfos && (
+                <div className="rounded-md border border-yellow-400/50 bg-yellow-50 dark:bg-yellow-900/20 p-4 text-sm text-yellow-800 dark:text-yellow-200">
+                  No program found with this ID or unable to fetch program data.
+                </div>
+              )}
+
+              {/* Program info */}
+              {validatedProgramId && programInfos && (
+                <Card className="border-muted">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Program Information</CardTitle>
+                  </CardHeader>
+
+                  <CardContent className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Program Data Address</p>
+                      <p className="font-mono break-all">
+                        {programInfos.programDataAddress}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-muted-foreground">Upgrade Authority</p>
+                      <p className="font-mono break-all">
+                        {programInfos.authority ?? 'Immutable'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Not managed by Fortis */}
+              {validatedProgramId && programInfos && multisigConfig && !isVaultAuthority && (
+                <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20">
                   <CardHeader>
-                    <CardTitle>Change program Upgrade authority</CardTitle>
-                    <CardDescription>
-                      Change the upgrade authority of one of your programs.
+                    <CardTitle className="text-yellow-800 dark:text-yellow-200">
+                      Program Not Managed by Fortis
+                    </CardTitle>
+                    <CardDescription className="text-yellow-700 dark:text-yellow-300">
+                      The upgrade authority is not the Fortis vault.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ChangeUpgradeAuthorityInput
-                      programInfos={programInfos}
-                      transactionIndex={
-                        Number(multisigConfig ? multisigConfig.transactionIndex : 0) + 1
-                      }
-                      votingDeadline={votingDeadline}
-                    />
+
+                  <CardContent className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Current Upgrade Authority</p>
+                      <p className="font-mono break-all">
+                        {programInfos.authority ?? 'Immutable'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-muted-foreground">
+                        Transfer authority using:
+                      </p>
+                      <pre className="mt-2 rounded-md bg-yellow-100 dark:bg-yellow-900/30 p-3 text-xs font-mono text-yellow-900 dark:text-yellow-200 overflow-auto">
+                        {`solana program set-upgrade-authority ${validatedProgramId} \
+--new-upgrade-authority ${vaultAddress} \
+--skip-new-upgrade-authority-signer-check`}
+                      </pre>
+                    </div>
                   </CardContent>
                 </Card>
-              </div>
-              <div className="flex-1">
-                <Card className="h-full">
-                  <CardHeader>
-                    <CardTitle>Upgrade program</CardTitle>
-                    <CardDescription>Apply an upgrade to the program.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <CreateProgramUpgradeInput
-                      programInfos={programInfos}
-                      transactionIndex={
-                        Number(multisigConfig ? multisigConfig.transactionIndex : 0) + 1
-                      }
-                      votingDeadline={votingDeadline}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Actions */}
+          {multisigConfig && programInfos && isVaultAuthority && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Change Upgrade Authority</CardTitle>
+                  <CardDescription>
+                    Propose a new upgrade authority for this program.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ChangeUpgradeAuthorityInput
+                    programInfos={programInfos}
+                    transactionIndex={Number(multisigConfig.transactionIndex) + 1}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Upgrade Program</CardTitle>
+                  <CardDescription>
+                    Deploy a new program version through Fortis.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CreateProgramUpgradeInput
+                    programInfos={programInfos}
+                    transactionIndex={Number(multisigConfig.transactionIndex) + 1}
+                  />
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>

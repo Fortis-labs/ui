@@ -35,6 +35,7 @@ export default function TransactionTable({
 }) {
   const { rpcUrl } = useRpcUrl();
   const { data: multisigConfig } = useMultisig();
+  const { explorerUrl } = useExplorerUrl(); // ✅ hook at top level
   if (transactions.length === 0) {
     return (
       <TableBody>
@@ -44,6 +45,11 @@ export default function TransactionTable({
       </TableBody>
     );
   }
+  const createExplorerUrl = (publicKey: string) => {
+    const clusterQuery = '?cluster=custom&customUrl=';
+    const encodedRpcUrl = encodeURIComponent(rpcUrl!);
+    return `${explorerUrl}/address/${publicKey}${clusterQuery}${encodedRpcUrl}`;
+  };
 
   return (
     <TableBody>
@@ -51,37 +57,34 @@ export default function TransactionTable({
         const isClosed = !tx.proposal;
 
         return (
-          <TableRow key={tx.transactionPda.toString()}>
+          <TableRow key={tx.transactionPda}>
             <TableCell>{Number(tx.index)}</TableCell>
 
             <TableCell className="text-blue-500">
               <Link
-                target={`_blank`}
-                to={createSolanaExplorerUrl(tx.transactionPda, rpcUrl!)}
-
+                target="_blank"
+                to={createExplorerUrl(tx.transactionPda)}
               >
                 {tx.transactionPda}
               </Link>
             </TableCell>
 
             <TableCell>
-              {isClosed
-                ? "Closed"
-                : renderStatus(tx.proposal!.status)}
+              {isClosed ? 'Closed' : renderStatus(tx.proposal!.status)}
             </TableCell>
 
             <TableCell>
               {isClosed ? (
-                <p className="text-xs text-stone-400">
-                  Proposal closed.
-                </p>
+                <p className="text-xs text-stone-400">Proposal closed.</p>
               ) : (
                 <ActionButtons
                   multisigPda={multisigPda}
                   transactionIndex={Number(tx.index)}
                   proposal={tx.proposal!}
                   rentCollector={multisigConfig?.rentCollector!}
-                  programId={programId ?? multisig.FORTIS_MULTISIG_PROGRAM_ADDRESS}
+                  programId={
+                    programId ?? multisig.FORTIS_MULTISIG_PROGRAM_ADDRESS
+                  }
                 />
               )}
             </TableCell>
@@ -91,7 +94,6 @@ export default function TransactionTable({
     </TableBody>
   );
 }
-
 
 function renderStatus(status: number) {
   switch (status) {
@@ -149,13 +151,3 @@ function ActionButtons({
     </>
   );
 }
-
-function createSolanaExplorerUrl(publicKey: string, rpcUrl: string): string {
-  const { explorerUrl } = useExplorerUrl();
-  const baseUrl = `${explorerUrl}/address/`;
-  const clusterQuery = '?cluster=custom&customUrl=';
-  const encodedRpcUrl = encodeURIComponent(rpcUrl);
-
-  return `${baseUrl}${publicKey}${clusterQuery}${encodedRpcUrl}`;
-}
-//http://localhost:3000/#/transactions/()%20=%3E%20{%20%20%20%20const%20queryClient%20=%20(0,_tanstack_react_query__WEBPACK_IMPORTED_MODULE_1__.useQueryClient)();%20%20%20%20const%20{%20data:%20explorerUrl%20}%20=%20(0,_tanstack_react_query__WEBPACK_IMPORTED_MODULE_2__.useSuspenseQuery)({%20%20%20%20%20%20%20%20queryKey:%20['explorerUrl'],%20%20%20%20%20%20%20%20queryFn:%20()%20=%3E%20Promise.resolve(getExplorerUrl()),%20%20%20%20});%20%20%20%20const%20setExplorerUrl%20=%20(0,_tanstack_react_query__WEBPACK_IMPORTED_MODULE_3__.useMutation)({%20%20%20%20%20%20%20%20mutationFn:%20(newExplorerUrl)%20=%3E%20{%20%20%20%20%20%20%20%20%20%20%20%20localStorage.setItem('x-explorer-url',%20newExplorerUrl);%20%20%20%20%20%20%20%20%20%20%20%20return%20Promise.resolve(newExplorerUrl);%20%20%20%20%20%20%20%20},%20%20%20%20%20%20%20%20onSuccess:%20(newExplorerUrl)%20=%3E%20{%20%20%20%20%20%20%20%20%20%20%20%20queryClient.setQueryData(['explorerUrl'],%20newExplorerUrl);%20%20%20%20%20%20%20%20},%20%20%20%20});%20%20%20%20return%20{%20explorerUrl,%20setExplorerUrl%20};}/address/Cygt65as8WE8rgUMcEkMxELULbgNsgugE6ToNSMBHSj6?cluster=custom&customUrl=https%3A%2F%2Fdevnet.helius-rpc.com%2F%3Fapi-key%3D64096058-650d-4e15-99cd-842c236765ef
