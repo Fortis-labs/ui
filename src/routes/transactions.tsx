@@ -44,7 +44,7 @@ export default function TransactionsPage() {
   const transactions = (latestTransactions || []).map((transaction) => {
     return {
       ...transaction,
-      transactionPda: transaction.transactionPda[0].toBase58(),
+      transactionPda: transaction.transactionPda[0],
     };
   });
 
@@ -128,7 +128,7 @@ export default function TransactionsPage() {
                 <TransactionTable
                   multisigPda={multisigAddress!}
                   transactions={transactions}
-                  programId={programId!.toBase58()}
+                  programId={programId!.toString()}
                 />
               </Suspense>
             </Table>

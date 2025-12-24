@@ -17,7 +17,7 @@ export async function getAccountsForSimulation(
     return (tx.message as Message)
       .nonProgramIds()
       .map((pubkey) => pubkey.toString())
-      .filter((address) => address !== SystemProgram.programId.toBase58());
+      .filter((address) => address !== SystemProgram.programId.toString());
   } else {
     const addressLookupTableAccounts = await loadLookupTables(connection, tx.message);
 

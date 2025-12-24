@@ -22,7 +22,7 @@ export async function createMultisig(
       threshold,
       members,
       createKey: createKey,
-      rentCollector: rentCollector ? rentCollector : null,
+      rentCollector: rentCollector ? rentCollector.toString() : null,
     });
 
 
