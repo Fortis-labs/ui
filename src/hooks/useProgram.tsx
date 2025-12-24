@@ -9,7 +9,7 @@ export interface SimplifiedProgramInfo {
   programDataAddress: string;
   authority: string;
 }
-
+/*
 export const useProgram = (managedProgramId: string | null) => {
   const { connection, multisigAddress } = useMultisigData();
 
@@ -58,3 +58,5 @@ export const useProgram = (managedProgramId: string | null) => {
     },
   });
 };
+
+*/

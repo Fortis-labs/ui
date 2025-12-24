@@ -211,16 +211,19 @@ const CreateProgramUpgradeInput = ({ programInfos, transactionIndex }: CreatePro
 
           <div className="mt-4">
             <p className="text-sm mb-1">Current Buffer Authority</p>
-            <div className="bg-yellow-50 rounded p-2 overflow-x-auto">
-              <code className="font-mono text-sm break-all">{currentAuthority || 'Unknown'}</code>
+            <div className="rounded-md bg-neutral-900 p-2 overflow-x-auto">
+              <code className="font-mono text-sm text-neutral-100 break-all">
+                {currentAuthority || 'Unknown'}
+              </code>
             </div>
           </div>
 
           <div className="mt-4">
             <p className="text-sm mb-1">Set vault as buffer authority using:</p>
-            <div className="bg-yellow-100 rounded p-2 overflow-x-auto">
-              <code className="mt-2 rounded-md bg-gray-800 text-white dark:bg-gray-900 dark:text-yellow-100 p-3 text-xs font-mono text-yellow-900 dark:text-yellow-200 overflow-auto">
-                {`solana program set-buffer-authority ${bufferAddress} --new-buffer-authority ${multisigVault}`}
+
+            <div className="rounded-md bg-neutral-900 p-3 overflow-x-auto border border-neutral-700">
+              <code className="block font-mono text-xs text-neutral-100 break-all">
+                solana program set-buffer-authority {bufferAddress} --new-buffer-authority {multisigVault?.toString()}
               </code>
             </div>
           </div>
