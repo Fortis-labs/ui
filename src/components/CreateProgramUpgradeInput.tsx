@@ -1,7 +1,7 @@
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getAddressDecoder } from '@solana/kit';
 import { Card, CardContent, CardTitle } from './ui/card';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
@@ -16,6 +16,7 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import { toast } from 'sonner';
+import { useDebounce } from 'use-debounce';
 import { isPublickey } from '../lib/isPublickey';
 import { SimplifiedProgramInfo } from '../hooks/useProgram';
 import { useMultisigData } from '../hooks/useMultisigData';
@@ -37,23 +38,24 @@ type CreateProgramUpgradeInputProps = {
   programInfos: SimplifiedProgramInfo;
   transactionIndex: number
 };
-
-const CreateProgramUpgradeInput = ({
-  programInfos,
-  transactionIndex,
-}: CreateProgramUpgradeInputProps) => {
+const CreateProgramUpgradeInput = ({ programInfos, transactionIndex }: CreateProgramUpgradeInputProps) => {
   const queryClient = useQueryClient();
   const wallet = useWallet();
-  const walletModal = useWalletModal();
+  const { connection, multisigVault, multisigAddress } = useMultisigData();
 
-  const [votingDays, setVotingDays] = useState<string>('');
-  const [deadlineError, setDeadlineError] = useState('');
   const [bufferAddress, setBufferAddress] = useState('');
   const [spillAddress, setSpillAddress] = useState('');
+  const [votingDays, setVotingDays] = useState('');
+  const [deadlineError, setDeadlineError] = useState('');
   const [showBufferDialog, setShowBufferDialog] = useState(false);
+  const [currentAuthority, setCurrentAuthority] = useState<string | null>(null);
 
-  const { connection, multisigVault, multisigAddress } = useMultisigData();
-  const { data: bufferInfo, refetch: refetchBuffer } = useBuffer(bufferAddress);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; }
+  }, []);
 
   const parseVotingDeadline = (): bigint | null => {
     const days = Number(votingDays);
@@ -65,93 +67,85 @@ const CreateProgramUpgradeInput = ({
     return now + BigInt(days * 24 * 60 * 60);
   };
 
+  const getBufferAuthority = async (address: string) => {
+    const info = await connection.getAccountInfo(new PublicKey(address));
+    if (!info) throw new Error('Buffer not found');
+    if (info.data.length < 37) throw new Error('Buffer data too short');
+    return new PublicKey(info.data.slice(5, 37)).toBase58();
+  };
+
   const handleCreateUpgrade = async () => {
     if (!bufferAddress || !spillAddress || !votingDays) return;
 
-    // If buffer authority is not vault, open dialog
-    if (bufferInfo?.authority !== multisigVault?.toString()) {
-      setShowBufferDialog(true);
-      return;
-    }
+    try {
+      const authority = await getBufferAuthority(bufferAddress);
 
-    // Proceed if vault owns buffer
-    await changeUpgradeAuth();
+      if (authority !== multisigVault?.toString()) {
+        if (mountedRef.current) {
+          setCurrentAuthority(authority);
+          setShowBufferDialog(true);
+        }
+        return;
+      }
+
+      await performUpgrade();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to fetch buffer authority');
+    }
   };
 
   const handleVerifyAuthority = async () => {
-    await refetchBuffer();
-    if (bufferInfo?.authority === multisigVault?.toString()) {
-      setShowBufferDialog(false); // auto-close if vault owns buffer
+    if (!bufferAddress) return;
+
+    try {
+      const authority = await getBufferAuthority(bufferAddress);
+      if (!mountedRef.current) return;
+
+      setCurrentAuthority(authority);
+
+      if (authority === multisigVault?.toString()) {
+        setShowBufferDialog(false);
+        await performUpgrade();
+      } else {
+        toast('Buffer authority is still not vault');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to verify buffer authority');
     }
   };
-  const changeUpgradeAuth = async () => {
-    if (!wallet.publicKey) {
-      walletModal.setVisible(true);
-      throw 'Wallet not connected';
-    }
-    if (!multisigVault) {
-      throw 'Multisig vault not found';
-    }
-    if (!multisigAddress) {
-      throw 'Multisig not found';
-    }
+
+  const performUpgrade = async () => {
+    if (!wallet.publicKey || !multisigVault || !multisigAddress) throw new Error('Missing wallet or multisig');
+
     setDeadlineError('');
     const votingDeadline = parseVotingDeadline();
-    if (!votingDeadline) throw 'Invalid voting deadline';
-    const vaultAddress = new PublicKey(multisigVault);
+    if (!votingDeadline) return;
+
+    const vault = new PublicKey(multisigVault);
     const multisigPda = new PublicKey(multisigAddress);
+
     const upgradeData = Buffer.alloc(4);
     upgradeData.writeInt32LE(3, 0);
 
-    const keys: AccountMeta[] = [
-      {
-        pubkey: new PublicKey(programInfos.programDataAddress),
-        isWritable: true,
-        isSigner: false,
-      },
-      {
-        pubkey: new PublicKey(programInfos.programAddress),
-        isWritable: true,
-        isSigner: false,
-      },
-      {
-        pubkey: new PublicKey(bufferAddress),
-        isWritable: true,
-        isSigner: false,
-      },
-      {
-        pubkey: new PublicKey(spillAddress),
-        isWritable: true,
-        isSigner: false,
-      },
-      {
-        pubkey: SYSVAR_RENT_PUBKEY,
-        isWritable: false,
-        isSigner: false,
-      },
-      {
-        pubkey: SYSVAR_CLOCK_PUBKEY,
-        isWritable: false,
-        isSigner: false,
-      },
-      {
-        pubkey: vaultAddress,
-        isWritable: false,
-        isSigner: true,
-      },
+    const keys = [
+      { pubkey: new PublicKey(programInfos.programDataAddress), isWritable: true, isSigner: false },
+      { pubkey: new PublicKey(programInfos.programAddress), isWritable: true, isSigner: false },
+      { pubkey: new PublicKey(bufferAddress), isWritable: true, isSigner: false },
+      { pubkey: new PublicKey(spillAddress), isWritable: true, isSigner: false },
+      { pubkey: SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
+      { pubkey: SYSVAR_CLOCK_PUBKEY, isWritable: false, isSigner: false },
+      { pubkey: vault, isWritable: false, isSigner: true },
     ];
 
     const blockhash = (await connection.getLatestBlockhash()).blockhash;
 
     const transactionMessage = new TransactionMessage({
-      instructions: [
-        new TransactionInstruction({
-          programId: new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111'),
-          data: upgradeData,
-          keys,
-        }),
-      ],
-      payerKey: new PublicKey(vaultAddress),
+      instructions: [new TransactionInstruction({
+        programId: new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111'),
+        data: upgradeData,
+        keys,
+      })],
+      payerKey: vault,
       recentBlockhash: blockhash,
     });
 
@@ -161,7 +155,7 @@ const CreateProgramUpgradeInput = ({
       multisigPda,
       creator: wallet.publicKey,
       ephemeralSigners: 0,
-      votingDeadline: votingDeadline,
+      votingDeadline,
       transactionMessage,
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],
@@ -179,35 +173,22 @@ const CreateProgramUpgradeInput = ({
       recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
     }).compileToV0Message();
 
-    const transaction = new VersionedTransaction(message);
+    const tx = new VersionedTransaction(message);
+    const sig = await wallet.sendTransaction(tx, connection, { skipPreflight: true });
 
-    const signature = await wallet.sendTransaction(transaction, connection, {
-      skipPreflight: true,
-    });
-    console.log('Transaction signature', signature);
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
-    const sent = await waitForConfirmation(connection, [signature]);
-    if (!sent[0]) {
-      throw `Transaction failed or unable to confirm. Check ${signature}`;
-    }
+    toast.loading('Confirming...', { id: 'tx' });
+    const sent = await waitForConfirmation(connection, [sig]);
+    if (!sent[0]) throw new Error(`Transaction failed: ${sig}`);
+
     setVotingDays('');
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    toast.success('Upgrade proposal created successfully!');
   };
 
   return (
     <div className="space-y-3">
-      <Input
-        placeholder="Buffer Address"
-        value={bufferAddress}
-        onChange={(e) => setBufferAddress(e.target.value)}
-      />
-      <Input
-        placeholder="Buffer Refund / Spill Address"
-        value={spillAddress}
-        onChange={(e) => setSpillAddress(e.target.value)}
-      />
+      <Input placeholder="Buffer Address" value={bufferAddress} onChange={(e) => setBufferAddress(e.target.value)} />
+      <Input placeholder="Spill Address" value={spillAddress} onChange={(e) => setSpillAddress(e.target.value)} />
       <Input
         placeholder="Voting period (days)"
         type="number"
@@ -220,27 +201,25 @@ const CreateProgramUpgradeInput = ({
       <Button onClick={handleCreateUpgrade}>Create Upgrade</Button>
 
       <Dialog open={showBufferDialog} onOpenChange={setShowBufferDialog}>
-        <DialogContent className="max-w-lg w-full bg-background dark:bg-background-dark border border-yellow-400 p-6 rounded-lg shadow-lg">
+        <DialogContent className="max-w-lg w-full p-6 rounded-lg border border-yellow-400 shadow-lg">
           <DialogHeader>
-            <DialogTitle className="text-yellow-800 dark:text-yellow-200">Buffer Authority Not Vault</DialogTitle>
-            <DialogDescription className="text-yellow-700 dark:text-yellow-300">
+            <DialogTitle className="text-yellow-800">Buffer Authority Not Vault</DialogTitle>
+            <DialogDescription className="text-yellow-700">
               The buffer authority is not the vault. Set the buffer authority to the vault before creating the upgrade.
             </DialogDescription>
           </DialogHeader>
 
           <div className="mt-4">
-            <p className="text-muted-foreground text-sm mb-1">Current Buffer Authority</p>
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded p-2 overflow-x-auto">
-              <code className="font-mono text-sm break-all">
-                {bufferInfo?.authority || 'Unknown'}
-              </code>
+            <p className="text-sm mb-1">Current Buffer Authority</p>
+            <div className="bg-yellow-50 rounded p-2 overflow-x-auto">
+              <code className="font-mono text-sm break-all">{currentAuthority || 'Unknown'}</code>
             </div>
           </div>
 
           <div className="mt-4">
-            <p className="text-muted-foreground text-sm mb-1">Set vault as buffer authority using:</p>
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 rounded p-3 overflow-x-auto">
-              <code className="font-mono text-xs break-all">
+            <p className="text-sm mb-1">Set vault as buffer authority using:</p>
+            <div className="bg-yellow-100 rounded p-2 overflow-x-auto">
+              <code className="mt-2 rounded-md bg-gray-800 text-white dark:bg-gray-900 dark:text-yellow-100 p-3 text-xs font-mono text-yellow-900 dark:text-yellow-200 overflow-auto">
                 {`solana program set-buffer-authority ${bufferAddress} --new-buffer-authority ${multisigVault}`}
               </code>
             </div>
@@ -248,7 +227,7 @@ const CreateProgramUpgradeInput = ({
 
           <DialogFooter className="mt-4 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setShowBufferDialog(false)}>Cancel</Button>
-            <Button onClick={handleVerifyAuthority}>Verify Authority</Button>
+            <Button onClick={handleVerifyAuthority}>Verify</Button>
           </DialogFooter>
 
           <DialogClose />
@@ -257,5 +236,4 @@ const CreateProgramUpgradeInput = ({
     </div>
   );
 };
-
 export default CreateProgramUpgradeInput;
