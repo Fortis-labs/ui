@@ -45,13 +45,13 @@ export default function TransactionTable({
   return (
     <TableBody>
       {transactions.map((tx) => (
-        <TableRow key={tx.transactionPda}>
+        <TableRow key={tx.transactionPda.toString()}>
           <TableCell>{Number(tx.index)}</TableCell>
 
           <TableCell className="text-blue-500">
             <Link
               target="_blank"
-              to={`${useExplorerUrl}/address/${tx.transactionPda}?cluster=custom&customUrl=${encodeURIComponent(
+              to={`${useExplorerUrl}/address/${tx.transactionPda.toString()}?cluster=custom&customUrl=${encodeURIComponent(
                 rpcUrl!
               )}`}
             >
