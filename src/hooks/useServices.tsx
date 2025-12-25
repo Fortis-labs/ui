@@ -9,11 +9,11 @@ import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 // load multisig
 export const useMultisig = () => {
-  const { connection } = useMultisigData();
+  const { connection, rpcUrl } = useMultisigData();
   const { multisigAddress } = useMultisigAddress();
 
   return useSuspenseQuery({
-    queryKey: ['multisig', multisigAddress],
+    queryKey: ['multisig', multisigAddress, rpcUrl],
     queryFn: async () => {
       if (!multisigAddress) return null;
       try {
@@ -23,6 +23,7 @@ export const useMultisig = () => {
         if (!accountInfo) {
           throw new Error("Multisig not found");
         }
+        console.log("multisig data size", accountInfo.data.length)
         return decoder.decode(accountInfo.data);
       } catch (error) {
         console.error(error);
@@ -33,10 +34,10 @@ export const useMultisig = () => {
 };
 
 export const useBalance = () => {
-  const { connection, multisigVault } = useMultisigData();
+  const { connection, multisigVault, rpcUrl } = useMultisigData();
 
   return useSuspenseQuery({
-    queryKey: ['balance', multisigVault?.toBase58()],
+    queryKey: ['balance', multisigVault?.toBase58(), rpcUrl],
     queryFn: async () => {
       if (!multisigVault) return null;
       try {
@@ -50,10 +51,10 @@ export const useBalance = () => {
 };
 
 export const useGetTokens = () => {
-  const { connection, multisigVault } = useMultisigData();
+  const { connection, multisigVault, rpcUrl } = useMultisigData();
 
   return useSuspenseQuery({
-    queryKey: ['tokenBalances', multisigVault?.toBase58()],
+    queryKey: ['tokenBalances', multisigVault?.toBase58(), rpcUrl],
     queryFn: async () => {
       if (!multisigVault) return null;
       try {
@@ -106,12 +107,12 @@ async function fetchTransactionDataBatch(
   return results;
 }
 export const useTransactions = (startIndex: number, endIndex: number) => {
-  const { connection, programId, multisigAddress } = useMultisigData();
+  const { connection, programId, multisigAddress, rpcUrl } = useMultisigData();
 
   return useSuspenseQuery({
     queryKey: [
       'transactions',
-      { startIndex, endIndex, multisigAddress, programId: programId.toBase58() },
+      { startIndex, endIndex, multisigAddress, programId: programId.toBase58() }, rpcUrl
     ],
     queryFn: async () => {
       if (!multisigAddress) return null;

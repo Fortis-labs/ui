@@ -25,7 +25,7 @@ const AccountsCloseButton = ({
     disabled
 }: AccountsCloseButtonProps) => {
     const wallet = useWallet();
-    const { connection } = useMultisigData();
+    const { connection, rpcUrl } = useMultisigData();
     const queryClient = useQueryClient();
     const accountsClose = async () => {
         //accounts close requires no signer
@@ -59,7 +59,7 @@ const AccountsCloseButton = ({
             throw `Transaction failed or unable to confirm: ${signature}`;
         }
 
-        await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        await queryClient.invalidateQueries({ queryKey: ['transactions', rpcUrl] });
     };
 
     return (

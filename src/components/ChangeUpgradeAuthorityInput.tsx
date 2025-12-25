@@ -35,7 +35,7 @@ const ChangeUpgradeAuthorityInput = ({
   const [deadlineError, setDeadlineError] = useState('');
   const queryClient = useQueryClient();
   const bigIntTransactionIndex = BigInt(transactionIndex);
-  const { connection, multisigAddress, programId, multisigVault } = useMultisigData();
+  const { connection, multisigAddress, programId, multisigVault, rpcUrl } = useMultisigData();
   const parseVotingDeadline = (): bigint | null => {
     try {
       const days = Number(votingDays);
@@ -54,6 +54,7 @@ const ChangeUpgradeAuthorityInput = ({
       return null;
     }
   };
+
   const changeUpgradeAuth = async () => {
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
@@ -145,7 +146,7 @@ const ChangeUpgradeAuthorityInput = ({
       throw `Transaction failed or unable to confirm. Check ${signature}`;
     }
     setVotingDays('');
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await queryClient.invalidateQueries({ queryKey: ['transactions', rpcUrl] });
   };
   return (
     <div>

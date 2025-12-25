@@ -1,7 +1,7 @@
 import { Component, ReactNode } from 'react';
 import { Button } from './ui/button';
-import SetRpcUrlnput from './SetRpcUrlnput';
 import { Card, CardContent, CardTitle } from './ui/card';
+import { NetworkSelector } from './NetworkSelector';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -49,19 +49,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </pre>
           </div>
           {this.state.error?.message.includes('jsonrpc') ? (
-            <div className={'mt-4'}>
-              <Card className={`w-full md:w-1/2`}>
+            <div className="mt-4">
+              <Card className="w-full md:w-1/2">
                 <CardContent>
-                  <h3>Try a different RPC</h3>
-                  <div className="mt-4 justify-between">
-                    <div className={`w-full`}>
-                      <SetRpcUrlnput onUpdate={this.handleRpcUpdate} />
-                    </div>
-                    {this.state.rpcUpdated && (
-                      <div className="mt-4 w-full">
-                        <Button onClick={() => window.location.reload()}>Refresh Page</Button>
-                      </div>
-                    )}
+                  <h3>Try a different network / RPC</h3>
+                  <div className="mt-4">
+                    <NetworkSelector />
+                  </div>
+                  <div className="mt-4 w-full">
+                    <Button onClick={() => window.location.reload()}>Refresh Page</Button>
                   </div>
                 </CardContent>
               </Card>

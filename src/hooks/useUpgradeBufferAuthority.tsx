@@ -9,10 +9,9 @@ import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 export function useUpgradeBufferAuthority(
     bufferAddress: string | null
 ) {
-    const { connection, multisigVault } = useMultisigData();
-
+    const { connection, multisigVault, rpcUrl } = useMultisigData();
     return useSuspenseQuery({
-        queryKey: ['bufferAuthority', bufferAddress],
+        queryKey: ['bufferAuthority', bufferAddress, rpcUrl],
         queryFn: async () => {
             if (!bufferAddress || !multisigVault) return null;
 

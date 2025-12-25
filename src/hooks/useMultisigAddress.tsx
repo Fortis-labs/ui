@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useMultisigData } from './useMultisigData';
 
-const MULTISIG_STORAGE_KEY = 'x-multisig-v4';
+const MULTISIG_STORAGE_KEY = 'x-multisig';
 
 const getMultisigAddress = () => {
   if (typeof window !== 'undefined') {
@@ -11,7 +12,6 @@ const getMultisigAddress = () => {
 
 export const useMultisigAddress = () => {
   const queryClient = useQueryClient();
-
   const { data: multisigAddress } = useSuspenseQuery({
     queryKey: [MULTISIG_STORAGE_KEY],
     queryFn: async () => getMultisigAddress(), // Always resolves

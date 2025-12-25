@@ -3,10 +3,11 @@ import ApproveButton from './ApproveButton';
 import ExecuteButton from './ExecuteButton';
 import AccountsCloseButton from './AccountsCloseButton';
 import { TableBody, TableCell, TableRow } from './ui/table';
-import { useExplorerUrl, useRpcUrl } from '../hooks/useSettings';
+import { resolveRpc } from '../hooks/useNetwork';
+import { DEFAULT_EXPLORER_URL } from '../hooks/useSettings';
 import { data, Link } from 'react-router-dom';
 import { useMultisig } from '../hooks/useServices';
-
+import { useNetwork } from '../hooks/useNetwork';
 export enum ProposalStatus {
   NOT_APPROVED = 0,
   APPROVED = 1,
@@ -33,9 +34,12 @@ export default function TransactionTable({
   }[];
   programId?: string;
 }) {
-  const { rpcUrl } = useRpcUrl();
+  const { network, customRpc } = useNetwork();
+
+  const rpcUrl = resolveRpc(network, customRpc);
+  //const { rpcUrl } = useRpcUrl();
   const { data: multisigConfig } = useMultisig();
-  const { explorerUrl } = useExplorerUrl(); // ✅ hook at top level
+  const explorerUrl = DEFAULT_EXPLORER_URL
   if (transactions.length === 0) {
     return (
       <TableBody>

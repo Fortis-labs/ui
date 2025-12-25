@@ -22,7 +22,7 @@ import { SimplifiedProgramInfo } from '../hooks/useProgram';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
-import { useBuffer } from '../hooks/useBuffer';
+
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,7 @@ const CreateProgramUpgradeInput = ({
 }: CreateProgramUpgradeInputProps) => {
   const queryClient = useQueryClient();
   const wallet = useWallet();
-  const { connection, multisigVault, multisigAddress } = useMultisigData();
+  const { connection, multisigVault, multisigAddress, rpcUrl } = useMultisigData();
   const [isLoading, setIsLoading] = useState(false);
   const [bufferError, setBufferError] = useState('');
   const [bufferAddress, setBufferAddress] = useState('');
@@ -192,7 +192,7 @@ const CreateProgramUpgradeInput = ({
     if (!sent[0]) throw new Error(`Transaction failed: ${sig}`);
 
     setVotingDays('');
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await queryClient.invalidateQueries({ queryKey: ['transactions', rpcUrl] });
     toast.success('Upgrade proposal created successfully!');
   };
 

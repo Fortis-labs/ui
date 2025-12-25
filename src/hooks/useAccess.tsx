@@ -1,4 +1,3 @@
-import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 import { useMultisig } from './useServices';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { isMember } from '../lib/utils';
@@ -10,10 +9,7 @@ export const useAccess = () => {
   if (!multisig || !publicKey) {
     return false;
   }
-  // if the pubkeyKey is in members return true
-  //cast Adress[] to PublicKey[]
   const members = multisig.members.map((addr) => new PublicKey(addr));
   const memberExists = isMember(publicKey, members);
-  // return true if found
   return !!memberExists;
 };

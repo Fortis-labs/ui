@@ -24,7 +24,7 @@ const ApproveButton = ({
 }: ApproveButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
-  const { connection } = useMultisigData();
+  const { connection, rpcUrl } = useMultisigData();
   const queryClient = useQueryClient();
   const approveProposal = async () => {
     if (!wallet.publicKey) {
@@ -58,7 +58,7 @@ const ApproveButton = ({
       throw `Transaction failed or unable to confirm: ${signature}`;
     }
 
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await queryClient.invalidateQueries({ queryKey: ['transactions', rpcUrl] });
   };
 
   return (

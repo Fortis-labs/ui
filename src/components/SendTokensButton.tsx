@@ -49,7 +49,7 @@ const SendTokens = ({
   const [recipient, setRecipient] = useState('');
   const [votingDays, setVotingDays] = useState<string>('');
   const [deadlineError, setDeadlineError] = useState('');
-  const { connection } = useMultisigData();
+  const { connection, rpcUrl } = useMultisigData();
 
   const queryClient = useQueryClient();
   const parsedAmount = parseFloat(amount);
@@ -180,7 +180,7 @@ const SendTokens = ({
     setAmount('');
     setRecipient('');
     setVotingDays('');
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await queryClient.invalidateQueries({ queryKey: ['transactions', rpcUrl] });
     closeDialog();
   };
 

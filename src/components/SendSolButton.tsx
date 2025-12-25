@@ -42,7 +42,7 @@ const SendSol = ({ multisigPda }: SendSolProps) => {
   const [votingDays, setVotingDays] = useState<string>('');
   const [deadlineError, setDeadlineError] = useState('');
 
-  const { connection, programId } = useMultisigData();
+  const { connection, programId, rpcUrl } = useMultisigData();
   const queryClient = useQueryClient();
   const parsedAmount = parseFloat(amount);
   const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0;
@@ -143,7 +143,7 @@ const SendSol = ({ multisigPda }: SendSolProps) => {
     setRecipient('');
     setVotingDays('');
     closeDialog();
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await queryClient.invalidateQueries({ queryKey: ['transactions', rpcUrl] });
   };
 
   return (

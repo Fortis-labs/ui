@@ -52,7 +52,7 @@ const ExecuteButton = ({
 
   const isTransactionReady = proposalStatus === 'Approved';
 
-  const { connection } = useMultisigData();
+  const { connection, rpcUrl } = useMultisigData();
   const queryClient = useQueryClient();
 
   const executeTransaction = async () => {
@@ -145,7 +145,7 @@ const ExecuteButton = ({
       throw `Unable to confirm`;
     }
     closeDialog();
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await queryClient.invalidateQueries({ queryKey: ['transactions', rpcUrl] });
   };
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

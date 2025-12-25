@@ -1,37 +1,6 @@
 import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 // top level
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-
-const DEFAULT_RPC_URL = 'https://api.devnet.solana.com'; // Default fallback
-
-const getRpcUrl = () => {
-  if (typeof document !== 'undefined') {
-    return localStorage.getItem('x-rpc-url') || DEFAULT_RPC_URL;
-  }
-  return DEFAULT_RPC_URL;
-};
-
-export const useRpcUrl = () => {
-  const queryClient = useQueryClient();
-
-  const { data: rpcUrl } = useSuspenseQuery({
-    queryKey: ['rpcUrl'],
-    queryFn: () => Promise.resolve(getRpcUrl()),
-  });
-
-  const setRpcUrl = useMutation({
-    mutationFn: (newRpcUrl: string) => {
-      localStorage.setItem(`x-rpc-url`, newRpcUrl);
-      return Promise.resolve(newRpcUrl);
-    },
-    onSuccess: (newRpcUrl) => {
-      queryClient.setQueryData(['rpcUrl'], newRpcUrl);
-    },
-  });
-
-  return { rpcUrl, setRpcUrl };
-};
-
 const DEFAULT_PROGRAM_ID = multisig.FORTIS_MULTISIG_PROGRAM_ADDRESS;
 
 const getProgramId = () => {
@@ -60,32 +29,6 @@ export const useProgramId = () => {
   });
   return { programId, setProgramId };
 };
-
 // explorer url
-const DEFAULT_EXPLORER_URL = 'https://explorer.solana.com';
-const getExplorerUrl = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('x-explorer-url') || DEFAULT_EXPLORER_URL;
-  }
-  return DEFAULT_PROGRAM_ID;
-};
+export const DEFAULT_EXPLORER_URL = 'https://explorer.solana.com';
 
-export const useExplorerUrl = () => {
-  const queryClient = useQueryClient();
-
-  const { data: explorerUrl } = useSuspenseQuery({
-    queryKey: ['explorerUrl'],
-    queryFn: () => Promise.resolve(getExplorerUrl()),
-  });
-
-  const setExplorerUrl = useMutation({
-    mutationFn: (newExplorerUrl: string) => {
-      localStorage.setItem('x-explorer-url', newExplorerUrl);
-      return Promise.resolve(newExplorerUrl);
-    },
-    onSuccess: (newExplorerUrl) => {
-      queryClient.setQueryData(['explorerUrl'], newExplorerUrl);
-    },
-  });
-  return { explorerUrl, setExplorerUrl };
-};
