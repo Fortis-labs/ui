@@ -124,6 +124,14 @@ function ActionButtons({
   const canExecute = proposal.status === ProposalStatus.APPROVED;
   // accounts can only be closed if proposal is executed or proposal is not apporved & has passed voting deadline
   const canClose = (proposal.status == ProposalStatus.EXECUTED || (proposal.status == ProposalStatus.NOT_APPROVED && now > proposal.votingDeadline));
+  // Log for debugging purposes
+  /*
+  console.log('transaction index:', transactionIndex);
+  console.log('Proposal Status:', proposal.status);
+  console.log('Current Time:', now);
+  console.log('Voting Deadline:', proposal.votingDeadline);
+  console.log('Can Close:', canClose);
+*/
   return (
     <>
       <ApproveButton

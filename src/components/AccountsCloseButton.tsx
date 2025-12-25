@@ -35,7 +35,10 @@ const AccountsCloseButton = ({
         }
 
         const tx = new Transaction();
-
+        console.log("tx index", transactionIndex);
+        console.log("ms pda", multisigPda);
+        console.log("rent Collector", rentCollector);
+        console.log("status", proposalStatus);
         tx.add(
             await multisig_ixs.ProposalAccountsClose({
                 rentCollector: new PublicKey(rentCollector),

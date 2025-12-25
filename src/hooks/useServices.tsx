@@ -72,38 +72,38 @@ export const useGetTokens = () => {
   });
 };
 // Transactions
-async function fetchTransactionData(
+async function fetchTransactionDataBatch(
   connection: Connection,
   multisigPda: PublicKey,
-  index: bigint,
+  indices: bigint[],
   programId: PublicKey
 ) {
-  const transactionPda = multisig_pda.getTransactionPda({
-    multisigPda,
-    index,
-    programId,
+  // 1️⃣ Compute all transaction PDAs and proposal PDAs
+  const transactionPdas = indices.map(index =>
+    multisig_pda.getTransactionPda({ multisigPda, index, programId })[0]
+  );
+  const proposalPdas = indices.map(index =>
+    multisig_pda.getProposalPda({ multisigPda, transactionIndex: index, programId })[0]
+  );
+
+  // 2️⃣ Fetch proposal accounts in batch
+  const proposalAccounts = await connection.getMultipleAccountsInfo(
+    proposalPdas.map(p => new PublicKey(p))
+  );
+
+  // 3️⃣ Decode proposals
+  const decoder = getProposalDecoder();
+  const results = indices.map((index, i) => {
+    const accountInfo = proposalAccounts[i];
+    const proposal = accountInfo ? decoder.decode(accountInfo.data) : null;
+    return {
+      transactionPda: transactionPdas[i],
+      proposal,
+      index,
+    };
   });
-  const proposalPda = multisig_pda.getProposalPda({
-    multisigPda,
-    transactionIndex: index,
-    programId,
-  });
 
-  let proposal;
-  try {
-    const proposalPubkey = new PublicKey(proposalPda[0]);
-    const decoder = getProposalDecoder();
-    const accountInfo = await connection.getAccountInfo(proposalPubkey);
-    if (!accountInfo) {
-      throw new Error("Proposal not found");
-    }
-    proposal = decoder.decode(accountInfo.data);
-
-  } catch (error) {
-    proposal = null;
-  }
-
-  return { transactionPda, proposal, index };
+  return results;
 }
 export const useTransactions = (startIndex: number, endIndex: number) => {
   const { connection, programId, multisigAddress } = useMultisigData();
@@ -115,21 +115,23 @@ export const useTransactions = (startIndex: number, endIndex: number) => {
     ],
     queryFn: async () => {
       if (!multisigAddress) return null;
-      try {
-        const multisigPda = new PublicKey(multisigAddress);
-        const results: any[] = [];
+      const multisigPda = new PublicKey(multisigAddress);
 
-        for (let i = 0; i <= startIndex - endIndex; i++) {
-          const index = BigInt(startIndex - i);
-          const transaction = await fetchTransactionData(connection, multisigPda, index, programId);
-          results.push(transaction);
-        }
-
-        return results;
-      } catch (error) {
-        return null;
+      const indices: bigint[] = [];
+      for (let i = startIndex; i >= endIndex; i--) {
+        indices.push(BigInt(i));
       }
+
+      // batch in chunks of 50 to respect RPC limits
+      const chunkSize = 80;
+      const results: any[] = [];
+      for (let i = 0; i < indices.length; i += chunkSize) {
+        const chunk = indices.slice(i, i + chunkSize);
+        const batchResult = await fetchTransactionDataBatch(connection, multisigPda, chunk, programId);
+        results.push(...batchResult);
+      }
+
+      return results;
     },
   });
 };
-
