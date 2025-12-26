@@ -39,6 +39,7 @@ type CreateProgramUpgradeInputProps = {
   transactionIndex: number
 };
 
+
 const CreateProgramUpgradeInput = ({
   programInfos,
   transactionIndex,
@@ -54,15 +55,24 @@ const CreateProgramUpgradeInput = ({
   const [deadlineError, setDeadlineError] = useState('');
   const [showBufferDialog, setShowBufferDialog] = useState(false);
   const [currentAuthority, setCurrentAuthority] = useState<string | null>(null);
-
   const mountedRef = useRef(true);
 
+  // Cleanup ref
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
-  }, []);
+  }, [rpcUrl]);
+
+  // ✅ Clear form when network changes
+  useEffect(() => {
+    setBufferAddress('');
+    setSpillAddress('');
+    setVotingDays('');
+    setBufferError('');
+    setDeadlineError('');
+  }, [rpcUrl]);
 
   const parseVotingDeadline = (): bigint | null => {
     const days = Number(votingDays);
@@ -70,56 +80,22 @@ const CreateProgramUpgradeInput = ({
       setDeadlineError('Voting period must be > 0');
       return null;
     }
+    setDeadlineError('');
     const now = BigInt(Math.floor(Date.now() / 1000));
     return now + BigInt(days * 24 * 60 * 60);
   };
 
   const getBufferAuthority = async (address: string) => {
-    const info = await connection.getAccountInfo(new PublicKey(address));
-    if (!info) throw new Error('Buffer not found');
-    if (info.data.length < 37) throw new Error('Buffer data too short');
+    const pubkey = new PublicKey(address);
+    const info = await connection.getAccountInfo(pubkey);
+    if (!info) {
+      throw new Error('Buffer account not found');
+    }
+    if (info.data.length < 37) {
+      throw new Error('Buffer data too short');
+    }
+
     return new PublicKey(info.data.slice(5, 37)).toBase58();
-  };
-
-  const handleCreateUpgrade = async () => {
-    if (!bufferAddress || !spillAddress || !votingDays) return;
-
-    setBufferError('');
-    setIsLoading(true);
-
-    try {
-      const authority = await getBufferAuthority(bufferAddress);
-      if (authority !== multisigVault?.toString()) {
-        setCurrentAuthority(authority);
-        setShowBufferDialog(true);
-        return;
-      }
-      await performUpgrade();
-    } catch (err: any) {
-      setBufferError(err.message || 'Failed to fetch buffer authority');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerifyAuthority = async () => {
-    if (!bufferAddress) return;
-
-    try {
-      const authority = await getBufferAuthority(bufferAddress);
-      if (!mountedRef.current) return;
-
-      setCurrentAuthority(authority);
-
-      if (authority === multisigVault?.toString()) {
-        setShowBufferDialog(false);
-        await performUpgrade();
-      } else {
-        toast('Buffer authority is still not vault');
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to verify buffer authority');
-    }
   };
 
   const performUpgrade = async () => {
@@ -196,6 +172,66 @@ const CreateProgramUpgradeInput = ({
     toast.success('Upgrade proposal created successfully!');
   };
 
+  const handleCreateUpgrade = async () => {
+    const deadline = parseVotingDeadline();
+    if (!bufferAddress || !spillAddress || !deadline) {
+      if (!bufferAddress) setBufferError('Buffer address is required');
+      return;
+    }
+
+    setIsLoading(true);
+    setBufferError('');
+
+    try {
+      const authority = await getBufferAuthority(bufferAddress);
+      if (!mountedRef.current) return;
+
+      const vaultStr = multisigVault?.toString() || '';
+      if (authority === vaultStr) {
+        await performUpgrade();
+      } else {
+        setCurrentAuthority(authority);
+        setShowBufferDialog(true);
+      }
+    } catch (err: any) {
+      if (mountedRef.current) {
+        setBufferError(err.message || 'Failed to verify buffer authority');
+      }
+    } finally {
+      if (mountedRef.current) setIsLoading(false);
+    }
+  };
+
+  const handleVerifyAuthority = async () => {
+    if (!bufferAddress) return;
+
+    setIsLoading(true);
+    try {
+      const authority = await getBufferAuthority(bufferAddress);
+      if (!mountedRef.current) return;
+
+      const vaultStr = multisigVault?.toString() || '';
+      setCurrentAuthority(authority);
+
+      if (authority === vaultStr) {
+        setShowBufferDialog(false);
+        await performUpgrade();
+      } else {
+        setBufferError('Buffer authority is still not the vault');
+      }
+    } catch (err: any) {
+      if (mountedRef.current) {
+        setBufferError(err.message || 'Verification failed');
+      }
+    } finally {
+      if (mountedRef.current) setIsLoading(false);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
   return (
     <div className="space-y-3">
       <Input
@@ -227,17 +263,15 @@ const CreateProgramUpgradeInput = ({
       <Button onClick={handleCreateUpgrade} disabled={isLoading} className="w-full">
         Create Upgrade
       </Button>
-      {isLoading ? 'Verifying...' : 'Verify'}
-
-      <Dialog open={showBufferDialog} onOpenChange={setShowBufferDialog}>
+      {/* Buffer Authority Verification Dialog */}
+      <Dialog open={showBufferDialog} onOpenChange={(open) => !open && setShowBufferDialog(false)}>
         <DialogContent className="max-w-lg w-full p-6 rounded-lg border border-yellow-400/50 bg-background shadow-lg">
           <DialogHeader>
             <DialogTitle className="text-yellow-800 dark:text-yellow-200">
-              Buffer Authority Not Vault
+              Buffer Not Managed by Fortis
             </DialogTitle>
             <DialogDescription className="text-yellow-700 dark:text-yellow-300">
-              The buffer authority is not the vault. Set the buffer authority to the vault before
-              creating the upgrade.
+              The current buffer authority is not the Fortis vault.
             </DialogDescription>
           </DialogHeader>
 
@@ -249,21 +283,24 @@ const CreateProgramUpgradeInput = ({
           </div>
 
           <div className="mt-4">
-            <p className="text-sm mb-1 text-foreground">Set vault as buffer authority using:</p>
+            <p className="text-sm mb-1 text-foreground">Transfer authority using:</p>
             <div className="rounded-md bg-muted p-3 overflow-x-auto border border-muted-foreground/20">
-              <code className="block font-mono text-xs break-all">
-                solana program set-buffer-authority {bufferAddress} --new-buffer-authority{' '}
-                {multisigVault?.toString()}
-              </code>
+              <code className="block font-mono text-xs break-all">{`solana program set-buffer-authority ${bufferAddress}
+--new-buffer-authority ${multisigVault?.toString()}`}</code>
             </div>
           </div>
 
           <DialogFooter className="mt-6 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowBufferDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowBufferDialog(false)}
+              disabled={isLoading}
+            >
               Close
             </Button>
-            <Button onClick={handleVerifyAuthority}>  disabled={isLoading}Verify</Button>
-            {isLoading ? 'Verifying...' : 'Verify'}
+            <Button onClick={handleVerifyAuthority} disabled={isLoading}>
+              {isLoading ? 'Verifying...' : 'Verify'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

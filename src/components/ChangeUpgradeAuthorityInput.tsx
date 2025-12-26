@@ -18,7 +18,7 @@ import { SimplifiedProgramInfo } from '../hooks/useProgram';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
-
+import { useEffect } from 'react';
 type ChangeUpgradeAuthorityInputProps = {
   programInfos: SimplifiedProgramInfo;
   transactionIndex: number;
@@ -29,13 +29,30 @@ const ChangeUpgradeAuthorityInput = ({
   transactionIndex,
 }: ChangeUpgradeAuthorityInputProps) => {
   const [newAuthority, setNewAuthority] = useState('');
+  const [votingDays, setVotingDays] = useState('');
+  const [deadlineError, setDeadlineError] = useState('');
   const wallet = useWallet();
   const walletModal = useWalletModal();
-  const [votingDays, setVotingDays] = useState<string>('');
-  const [deadlineError, setDeadlineError] = useState('');
   const queryClient = useQueryClient();
-  const bigIntTransactionIndex = BigInt(transactionIndex);
   const { connection, multisigAddress, programId, multisigVault, rpcUrl } = useMultisigData();
+  const bigIntTransactionIndex = BigInt(transactionIndex);
+  // Clear form on network change
+  useEffect(() => {
+    setNewAuthority('');
+    setVotingDays('');
+    setDeadlineError('');
+  }, [rpcUrl]);
+
+  const isValidAuthority = newAuthority.trim() ? isPublickey(newAuthority.trim()) : false;
+  const isValidVotingDays = votingDays ? !isNaN(Number(votingDays)) && Number(votingDays) > 0 : false;
+
+  const isFormValid =
+    programId &&
+    isValidAuthority &&
+    isValidVotingDays &&
+    isPublickey(programInfos.programAddress) &&
+    isPublickey(programInfos.authority) &&
+    isPublickey(programInfos.programDataAddress);
   const parseVotingDeadline = (): bigint | null => {
     try {
       const days = Number(votingDays);
@@ -148,36 +165,57 @@ const ChangeUpgradeAuthorityInput = ({
     setVotingDays('');
     await queryClient.invalidateQueries({ queryKey: ['transactions', rpcUrl] });
   };
+
   return (
-    <div>
-      <Input
-        placeholder="New Program Authority"
-        type="text"
-        onChange={(e) => setNewAuthority(e.target.value)}
-        className="mb-3"
-      />
-      <Input
-        placeholder="Voting period (days)"
-        type="number"
-        min={1}
-        onChange={(e) => { setDeadlineError(''); setVotingDays(e.target.value) }}
-      />
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <Input
+          placeholder="New Program Authority"
+          value={newAuthority}
+          onChange={(e) => {
+            setNewAuthority(e.target.value);
+            if (deadlineError) setDeadlineError('');
+          }}
+        />
+        {!isValidAuthority && newAuthority && (
+          <p className="text-xs text-red-500">Invalid public key</p>
+        )}
+      </div>
+
+      <div className="space-y-1">
+        <Input
+          placeholder="Voting period (days)"
+          type="number"
+          min={1}
+          value={votingDays}
+          onChange={(e) => {
+            setVotingDays(e.target.value);
+            if (deadlineError) setDeadlineError('');
+          }}
+        />
+        {!isValidVotingDays && votingDays && (
+          <p className="text-xs text-red-500">invalid voting periood</p>
+        )}
+      </div>
+
       <Button
-        onClick={() =>
-          toast.promise(changeUpgradeAuth, {
-            id: 'transaction',
-            loading: 'Loading...',
-            success: 'Upgrade authority change proposed.',
-            error: (e) => `Failed to propose: ${e}`,
-          })
-        }
-        disabled={
-          !programId ||
-          !isPublickey(newAuthority) ||
-          !isPublickey(programInfos.programAddress) ||
-          !isPublickey(programInfos.authority) ||
-          !isPublickey(programInfos.programDataAddress)
-        }
+        onClick={async () => {
+          try {
+            await toast.promise(changeUpgradeAuth, {
+              id: 'transaction',
+              loading: 'Proposing...',
+              success: 'Upgrade authority change proposed.',
+              error: (e) => `Failed to propose: ${e.message || e}`,
+            });
+            // ✅ Clear form on success
+            setNewAuthority('');
+            setVotingDays('');
+          } catch (error) {
+            // Error is already handled by toast
+          }
+        }}
+        disabled={!isFormValid}
+        className="w-full"
       >
         Change Authority
       </Button>

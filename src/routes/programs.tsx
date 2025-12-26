@@ -21,22 +21,32 @@ import { Suspense, useState, useEffect, useRef } from 'react';
 import { SimplifiedProgramInfo } from '../hooks/useProgram';
 import CreateProgramUpgradeInput from '../components/CreateProgramUpgradeInput';
 import { useMultisigData } from '../hooks/useMultisigData';
-
+import { Copy } from 'lucide-react'
+const BPF_LOADER_UPGRADEABLE = new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111');
 const ProgramsPage = () => {
   const { data: multisigConfig } = useMultisig();
-  const { connection, multisigVault: vaultAddress } = useMultisigData();
+  const { connection, multisigVault: vaultAddress, rpcUrl } = useMultisigData();
 
   const [programIdInput, setProgramIdInput] = useState('');
   const [programIdError, setProgramIdError] = useState('');
   const [validatedProgramId, setValidatedProgramId] = useState<string | null>(null);
-  const [programInfos, setProgramInfos] = useState<any | null>(null);
+  const [programInfos, setProgramInfos] = useState<{
+    programAddress: string;
+    programDataAddress: string;
+    authority: string;
+    isClosed?: boolean;
+  } | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [currentAuthority, setCurrentAuthority] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
+  const inputRef = useRef<HTMLInputElement>(null);
   const mountedRef = useRef(true);
-  const vaultAddressStr = vaultAddress?.toString() ?? null;
+  // Auto-focus input
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
+  // Cleanup ref
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -44,16 +54,26 @@ const ProgramsPage = () => {
     };
   }, []);
 
-  const getSimplifiedProgramInfos = async (programId: string): Promise<any> => {
+  // ✅ Clear validation when network changes
+  useEffect(() => {
+    clearProgramId();
+  }, [rpcUrl]);
+
+  const getSimplifiedProgramInfos = async (programId: string) => {
     if (!programId) throw new Error('Program ID is required');
     const programIdPk = new PublicKey(programId);
 
     const info = await connection.getAccountInfo(programIdPk);
     if (!info) throw new Error(`Program account not found: ${programId}`);
 
+    // ✅ Validate it's an upgradeable program
+    if (!info.owner.equals(BPF_LOADER_UPGRADEABLE)) {
+      throw new Error('Program is not an upgradeable program');
+    }
+
     const [programDataAddress] = PublicKey.findProgramAddressSync(
       [programIdPk.toBytes()],
-      new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111')
+      BPF_LOADER_UPGRADEABLE
     );
 
     const programDataAccount = await connection.getAccountInfo(programDataAddress);
@@ -61,11 +81,15 @@ const ProgramsPage = () => {
       throw new Error(`Program data account not found for: ${programId}`);
     }
 
-    const authorityPubkey = new PublicKey(programDataAccount.data.subarray(13, 45));
+    const authorityBytes = programDataAccount.data.subarray(13, 45);
+    const authorityPubkey = new PublicKey(authorityBytes);
+    const isClosed = authorityPubkey.equals(PublicKey.default);
+
     return {
       programAddress: programId,
       programDataAddress: programDataAddress.toString(),
-      authority: authorityPubkey.toBase58(),
+      authority: isClosed ? 'CLOSED' : authorityPubkey.toBase58(),
+      isClosed,
     };
   };
 
@@ -93,7 +117,8 @@ const ProgramsPage = () => {
       setValidatedProgramId(input);
       setProgramInfos(info);
 
-      if (info.authority === vaultAddressStr) {
+      const vaultStr = vaultAddress?.toString() || '';
+      if (info.authority === vaultStr || info.isClosed) {
         setShowDialog(false);
       } else {
         setCurrentAuthority(info.authority);
@@ -118,13 +143,16 @@ const ProgramsPage = () => {
 
       setProgramInfos(info);
 
-      if (info.authority === vaultAddressStr) {
+      const vaultStr = vaultAddress?.toString() || '';
+      if (info.authority === vaultStr || info.isClosed) {
         setShowDialog(false);
       } else {
         setCurrentAuthority(info.authority);
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to verify authority');
+      if (mountedRef.current) {
+        setProgramIdError(err.message || 'Verification failed');
+      }
     } finally {
       if (mountedRef.current) setIsLoading(false);
     }
@@ -138,11 +166,16 @@ const ProgramsPage = () => {
     setShowDialog(false);
   };
 
+  const vaultAddressStr = vaultAddress?.toString() ?? '';
   const isVaultAuthority = programInfos?.authority === vaultAddressStr;
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
   return (
     <ErrorBoundary>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div>Loading...</div>
+      }>
         <div className="space-y-6">
           <h1 className="text-3xl font-bold">Program Manager</h1>
 
@@ -158,6 +191,7 @@ const ProgramsPage = () => {
               <div className="flex items-end gap-2">
                 <div className="flex-1">
                   <Input
+                    ref={inputRef}
                     placeholder="Enter Program ID"
                     value={programIdInput}
                     onChange={(e) => setProgramIdInput(e.target.value)}
@@ -188,11 +222,33 @@ const ProgramsPage = () => {
                   <CardContent className="space-y-3 text-sm">
                     <div>
                       <p className="text-muted-foreground">Program Data Address</p>
-                      <p className="font-mono break-all">{programInfos.programDataAddress}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-mono break-all flex-1">{programInfos.programDataAddress}</p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => copyToClipboard(programInfos.programDataAddress)}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Upgrade Authority</p>
-                      <p className="font-mono break-all">{programInfos.authority}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-mono break-all flex-1">
+                          {programInfos.isClosed ? 'Program is closed (authority revoked)' : programInfos.authority}
+                        </p>
+                        {!programInfos.isClosed && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => copyToClipboard(programInfos.authority)}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
