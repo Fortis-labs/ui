@@ -23,15 +23,18 @@ const SetProgramIdInput = () => {
   };
 
   return (
-    <div>
+    <div className="space-y-3">
       <Input
         onChange={(e) => setProgramIdState(e.target.value.trim())}
         placeholder={storedProgramId || 'SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf'}
-        value={programId} // Sync input state with stored value
-        className=""
+        value={programId}
+        className="font-mono"
       />
       {!publicKeyTest && programId.length > 0 && (
-        <p className="mt-2 text-xs text-red-500">Please enter a valid key.</p>
+        <p className="text-xs text-red-500 flex items-center gap-1">
+          <span>⚠️</span>
+          Please enter a valid key.
+        </p>
       )}
       <Button
         onClick={() =>
@@ -42,7 +45,7 @@ const SetProgramIdInput = () => {
           })
         }
         disabled={!publicKeyTest && programId.length > 0}
-        className="mt-2"
+        className="w-full"
       >
         Set Program ID
       </Button>

@@ -151,6 +151,7 @@ const SendSol = ({ multisigPda }: SendSolProps) => {
       <DialogTrigger asChild>
         <Button
           disabled={!isMember}
+          className="shadow-[0_4px_12px_hsla(200,95%,58%,0.25)] hover:shadow-[0_6px_20px_hsla(200,95%,58%,0.4)]"
           onClick={(e) => {
             if (!wallet.publicKey) {
               e.preventDefault();
@@ -161,7 +162,6 @@ const SendSol = ({ multisigPda }: SendSolProps) => {
           Send SOL
         </Button>
       </DialogTrigger>
-
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Transfer SOL</DialogTitle>

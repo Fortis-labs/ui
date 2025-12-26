@@ -3,11 +3,17 @@ import * as React from 'react';
 
 import { cn } from '~/lib/utils';
 
+// ============================================
+// CARD COMPONENTS - Enhanced with subtle glow
+// ============================================
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('rounded-lg border bg-card text-card-foreground shadow-sm', className)}
+      className={cn(
+        'rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-[0_0_20px_hsla(200,95%,58%,0.08)] transition-shadow duration-300',
+        className
+      )}
       {...props}
     />
   )

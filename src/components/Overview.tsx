@@ -8,6 +8,10 @@ import { useMultisig } from '../hooks/useServices';
 import { useMultisigAddress } from '../hooks/useMultisigAddress';
 import { useEffect } from 'react';
 import { useState } from 'react';
+
+// ============================================
+// ENHANCED OVERVIEW
+// ============================================
 export default function Overview() {
   const { multisigAddress } = useMultisigData();
   const { data: multisig } = useMultisig();
@@ -16,32 +20,32 @@ export default function Overview() {
 
   useEffect(() => {
     if (multisigAddress && multisig === null) {
-      // Show message
       setShowNotFound(true);
-
-      // Clear after 2 seconds
       const timer = setTimeout(() => {
         setMultisigAddress.mutate(null);
         setShowNotFound(false);
       }, 2000);
-
       return () => clearTimeout(timer);
     } else {
       setShowNotFound(false);
     }
   }, [multisigAddress, multisig, setMultisigAddress]);
 
-  // Show "not found" temporarily
   if (showNotFound) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-destructive font-medium">Multisig not found on this network</p>
-        <p className="text-sm text-muted-foreground mt-1">{multisigAddress}</p>
+      <div className="p-8 text-center">
+        <div className="inline-block p-6 rounded-lg border-2 border-destructive bg-destructive/10">
+          <p className="text-destructive font-semibold text-lg mb-2">
+            ⚠️ Multisig not found on this network
+          </p>
+          <p className="text-sm text-muted-foreground font-mono break-all">
+            {multisigAddress}
+          </p>
+        </div>
       </div>
     );
   }
 
-  // Only render cards if multisig exists
   if (multisig) {
     return (
       <main className="relative space-y-6">

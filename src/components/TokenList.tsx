@@ -15,53 +15,61 @@ export function TokenList({ multisigPda }: TokenListProps) {
   const { data: tokens = null } = useGetTokens();
 
   return (
-    <Card>
+    <Card className="hover:shadow-[0_8px_24px_hsla(200,95%,58%,0.12)] transition-all duration-300">
       <CardHeader>
-        <CardTitle>Tokens</CardTitle>
+        <CardTitle className="text-gradient text-2xl">Tokens</CardTitle>
         <CardDescription>The tokens you hold in your wallet</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-8">
-          <div>
-            <div className="flex items-center">
-              <div className="ml-4 space-y-1">
-                <p className="text-sm font-medium leading-none">SOL</p>
+        <div className="space-y-6">
+          {/* SOL Balance with gradient accent */}
+          <div className="p-4 rounded-lg border border-border hover:border-[hsl(200,95%,58%)] transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-gradient-to-br from-[hsl(200,95%,58%)] to-[hsl(210,90%,52%)]"></span>
+                  SOL
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Amount: {solBalance ? solBalance / LAMPORTS_PER_SOL : 0}
                 </p>
               </div>
-              <div className="ml-auto">
-                <SendSol multisigPda={multisigPda} />
-              </div>
+              <SendSol multisigPda={multisigPda} />
             </div>
-            {tokens && tokens.length > 0 ? <hr className="mt-2" /> : null}
           </div>
 
-          {tokens &&
-            tokens.map((token) => (
-              <div key={token.account.data.parsed.info.mint}>
-                <div className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      Mint: {token.account.data.parsed.info.mint}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Amount: {token.account.data.parsed.info.tokenAmount.uiAmount}
-                    </p>
-                  </div>
-                  <div className="ml-auto">
-                    <SendTokens
-                      mint={token.account.data.parsed.info.mint}
-                      tokenAccount={token.pubkey.toBase58()}
-                      decimals={token.account.data.parsed.info.tokenAmount.decimals}
-                      multisigPda={multisigPda}
-                      programId={programId.toBase58()}
-                    />
+          {/* Token List with enhanced styling */}
+          {tokens && tokens.length > 0 && (
+            <div className="space-y-4">
+              <div className="divider-gradient"></div>
+              {tokens.map((token) => (
+                <div
+                  key={token.account.data.parsed.info.mint}
+                  className="p-4 rounded-lg border border-border hover:border-[hsl(200,95%,58%)] transition-all duration-200"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        Mint: {token.account.data.parsed.info.mint}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Amount: {token.account.data.parsed.info.tokenAmount.uiAmount}
+                      </p>
+                    </div>
+                    <div className="ml-4 flex-shrink-0">
+                      <SendTokens
+                        mint={token.account.data.parsed.info.mint}
+                        tokenAccount={token.pubkey.toBase58()}
+                        decimals={token.account.data.parsed.info.tokenAmount.decimals}
+                        multisigPda={multisigPda}
+                        programId={programId.toBase58()}
+                      />
+                    </div>
                   </div>
                 </div>
-                <hr className="mt-2" />
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

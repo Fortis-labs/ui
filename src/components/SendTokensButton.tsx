@@ -189,6 +189,8 @@ const SendTokens = ({
       <DialogTrigger asChild>
         <Button
           disabled={!isMember}
+          variant="default" // Uses gradient by default now
+          className="shadow-[0_4px_12px_hsla(200,95%,58%,0.25)] hover:shadow-[0_6px_20px_hsla(200,95%,58%,0.4)]"
           onClick={(e) => {
             if (!wallet.publicKey) {
               e.preventDefault();

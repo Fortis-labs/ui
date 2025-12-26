@@ -44,7 +44,12 @@ export default function TransactionTable({
     return (
       <TableBody>
         <TableRow>
-          <TableCell colSpan={5}>No transactions found.</TableCell>
+          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-4xl opacity-50">📭</span>
+              <p>No transactions found.</p>
+            </div>
+          </TableCell>
         </TableRow>
       </TableBody>
     );
@@ -61,34 +66,45 @@ export default function TransactionTable({
         const isClosed = !tx.proposal;
 
         return (
-          <TableRow key={tx.transactionPda}>
-            <TableCell>{Number(tx.index)}</TableCell>
+          <TableRow
+            key={tx.transactionPda}
+            className="hover:bg-muted/50 hover:shadow-[0_0_12px_hsla(200,95%,58%,0.05)] transition-all duration-200"
+          >
+            <TableCell className="font-mono text-sm">
+              <span className="px-2 py-1 rounded bg-muted text-foreground">
+                #{Number(tx.index)}
+              </span>
+            </TableCell>
 
-            <TableCell className="text-blue-500">
+            <TableCell>
               <Link
                 target="_blank"
                 to={createExplorerUrl(tx.transactionPda)}
+                className="text-[hsl(200,95%,58%)] hover:text-[hsl(210,90%,52%)] font-mono text-sm underline-offset-4 hover:underline transition-colors"
               >
-                {tx.transactionPda}
+                {tx.transactionPda.slice(0, 8)}...{tx.transactionPda.slice(-8)}
               </Link>
             </TableCell>
 
             <TableCell>
-              {isClosed ? 'Closed' : renderStatus(tx.proposal!.status)}
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${isClosed
+                  ? 'bg-muted text-muted-foreground'
+                  : 'bg-gradient-to-br from-[hsl(200,95%,58%)] to-[hsl(210,90%,52%)] text-white'
+                }`}>
+                {isClosed ? 'Closed' : renderStatus(tx.proposal!.status)}
+              </span>
             </TableCell>
 
             <TableCell>
               {isClosed ? (
-                <p className="text-xs text-stone-400">Proposal closed.</p>
+                <p className="text-xs text-muted-foreground">Proposal closed.</p>
               ) : (
                 <ActionButtons
                   multisigPda={multisigPda}
                   transactionIndex={Number(tx.index)}
                   proposal={tx.proposal!}
                   rentCollector={multisigConfig?.rentCollector!}
-                  programId={
-                    programId ?? multisig.FORTIS_MULTISIG_PROGRAM_ADDRESS
-                  }
+                  programId={programId ?? multisig.FORTIS_MULTISIG_PROGRAM_ADDRESS}
                 />
               )}
             </TableCell>
@@ -98,7 +114,6 @@ export default function TransactionTable({
     </TableBody>
   );
 }
-
 function renderStatus(status: number) {
   switch (status) {
     case ProposalStatus.NOT_APPROVED:
