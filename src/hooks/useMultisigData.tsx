@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
-import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
+import * as multisig_pda from '../../client/ts/pda';
 import { resolveRpc } from './useNetwork';
 import { useProgramId } from './useSettings';
 import { useMultisigAddress } from './useMultisigAddress';

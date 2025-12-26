@@ -8,9 +8,9 @@ import {
 } from '../components/ui/dialog';
 import { Button } from './ui/button';
 import { useState } from 'react';
-import * as multisig_ixs from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/instructions';
-import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
-import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
+import * as multisig_ixs from '../../client/ts/instructions';
+import * as multisig_pda from '../../client/ts/pda';
+import * as multisig from '../../client/ts/generated';
 import { useWallet } from '@solana/wallet-adapter-react';
 import {
   LAMPORTS_PER_SOL,

@@ -9,8 +9,7 @@ import {
 import * as bs58 from 'bs58';
 import { Button } from './ui/button';
 import { useState } from 'react';
-import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
-import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
+import * as multisig_pda from '../../client/ts/pda';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Message, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { Input } from './ui/input';

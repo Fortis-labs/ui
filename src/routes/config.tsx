@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-//import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useMultisig } from '../hooks/useServices';
 import { ErrorBoundary } from '../components/ErrorBoundary';

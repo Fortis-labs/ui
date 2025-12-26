@@ -1,6 +1,6 @@
 
-import { getMultisigDecoder, getProposalDecoder } from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
-import * as multisig_pda from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/pda';
+import { getMultisigDecoder, getProposalDecoder } from '../../client/ts/generated';
+import * as multisig_pda from '../../client/ts/pda';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { useMultisigData } from './useMultisigData';

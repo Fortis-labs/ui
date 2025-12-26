@@ -1,4 +1,4 @@
-import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
+import * as multisig from '../../client/ts/generated';
 import ApproveButton from './ApproveButton';
 import ExecuteButton from './ExecuteButton';
 import AccountsCloseButton from './AccountsCloseButton';
@@ -88,8 +88,8 @@ export default function TransactionTable({
 
             <TableCell>
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${isClosed
-                  ? 'bg-muted text-muted-foreground'
-                  : 'bg-gradient-to-br from-[hsl(200,95%,58%)] to-[hsl(210,90%,52%)] text-white'
+                ? 'bg-muted text-muted-foreground'
+                : 'bg-gradient-to-br from-[hsl(200,95%,58%)] to-[hsl(210,90%,52%)] text-white'
                 }`}>
                 {isClosed ? 'Closed' : renderStatus(tx.proposal!.status)}
               </span>

@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
+import * as multisig from '../../client/ts/generated';
 import { PublicKey } from '@solana/web3.js';
 
 export function cn(...inputs: ClassValue[]) {

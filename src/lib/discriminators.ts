@@ -1,6 +1,6 @@
 
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
-import * as multisig from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/generated';
+import * as multisig from '../../client/ts/generated';
 
 export interface DiscriminatorMultisigPosition {
   discriminator: Uint8Array<ArrayBuffer>;
