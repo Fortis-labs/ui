@@ -4,7 +4,7 @@ import { Input } from './ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useState } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import * as multisig_ixs from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/instructions';
+import * as multisig_ixs from '../../client/ts/instructions';
 import {
   AccountMeta,
   PublicKey,

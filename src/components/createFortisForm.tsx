@@ -100,10 +100,6 @@ export default function CreateFortisForm({ }: {}) {
       console.log('Transaction signature', signature);
       console.log('confirmation status', confirmation);
 
-
-
-
-
       setMultisigAddress.mutate(multisig.toBase58());
 
       return { signature: signature, multisig: multisig.toBase58() };

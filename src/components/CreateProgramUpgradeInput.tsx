@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getAddressDecoder } from '@solana/kit';
 import { Card, CardContent, CardTitle } from './ui/card';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import * as multisig_ixs from '/home/mubariz/Documents/SolDev/fortis_repos/client/ts/instructions';
+import * as multisig_ixs from '../../client/ts/instructions';
 import {
   AccountMeta,
   PublicKey,
