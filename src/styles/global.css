@@ -1,0 +1,274 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
+
+        /* 🔵 PRIMARY — MATCHES YOUR LOGO BLUE */
+        --primary: 205 95% 55%;
+        /* Slightly more vibrant to match logo */
+        --primary-foreground: 0 0% 100%;
+        /* Pure white for better contrast */
+
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 205 95% 55%;
+
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 205 95% 55%;
+
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+        --ring: 205 95% 55%;
+
+        --radius: 0.5rem;
+    }
+
+    .dark {
+        --background: 222.2 84% 4.9%;
+        /* Dark navy background - matches your screenshot */
+        --foreground: 210 40% 98%;
+
+        --card: 217.2 32.6% 12%;
+        /* Slightly lighter than background for cards */
+        --card-foreground: 210 40% 98%;
+
+        --popover: 222.2 84% 4.9%;
+        --popover-foreground: 210 40% 98%;
+
+        /* 🔵 PRIMARY IN DARK MODE — Vibrant like your logo */
+        --primary: 200 95% 58%;
+        /* Brighter cyan-blue to match logo gradient */
+        --primary-foreground: 222.2 84% 4.9%;
+        /* Dark text for contrast */
+
+        --secondary: 217.2 32.6% 17.5%;
+        --secondary-foreground: 210 40% 98%;
+
+        --muted: 217.2 32.6% 17.5%;
+        --muted-foreground: 215 20.2% 65.1%;
+
+        --accent: 217.2 32.6% 17.5%;
+        --accent-foreground: 210 40% 98%;
+
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 40% 98%;
+
+        --border: 217.2 32.6% 17.5%;
+        --input: 217.2 32.6% 17.5%;
+        --ring: 200 95% 58%;
+    }
+
+    /* Logo styling with subtle glow in dark mode */
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background-color: hsl(var(--background));
+    }
+
+    .logo {
+        height: 40px;
+        width: auto;
+        /* Add subtle glow effect in dark mode */
+        filter: drop-shadow(0 0 8px hsla(200, 95%, 58%, 0.3));
+    }
+
+    .logo-text {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: hsl(var(--foreground));
+        font-family: system-ui, sans-serif;
+    }
+
+    /* Enhanced button styles with gradient effect */
+    .btn-primary {
+        background: linear-gradient(135deg, hsl(200, 95%, 58%) 0%, hsl(210, 90%, 52%) 100%);
+        color: hsl(var(--primary-foreground));
+        border: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px hsla(200, 95%, 58%, 0.25);
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 6px 20px hsla(200, 95%, 58%, 0.4);
+        transform: translateY(-1px);
+    }
+
+    /* Active nav item with gradient to match logo */
+    .nav-active {
+        background: linear-gradient(135deg, hsl(200, 95%, 58%) 0%, hsl(210, 90%, 52%) 100%);
+        box-shadow: 0 0 16px hsla(200, 95%, 58%, 0.35);
+    }
+
+    /* Input focus states matching logo */
+    input:focus,
+    textarea:focus {
+        outline: none;
+        border-color: hsl(var(--primary));
+        box-shadow: 0 0 0 2px hsla(200, 95%, 58%, 0.2);
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+/* Add these utility classes to your global.css file */
+
+@layer utilities {
+
+    /* Gradient text matching logo */
+    .text-gradient {
+        background: linear-gradient(135deg, hsl(200, 95%, 58%) 0%, hsl(210, 90%, 52%) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Gradient border for cards/containers */
+    .border-gradient {
+        border: 2px solid transparent;
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+        background-image: linear-gradient(hsl(var(--background)),
+                hsl(var(--background))),
+            linear-gradient(135deg, hsl(200, 95%, 58%) 0%, hsl(210, 90%, 52%) 100%);
+    }
+
+    /* Glow effect for hover states */
+    .glow-primary {
+        box-shadow: 0 0 20px hsla(200, 95%, 58%, 0.3);
+    }
+
+    .glow-primary-strong {
+        box-shadow: 0 0 30px hsla(200, 95%, 58%, 0.5);
+    }
+
+    /* Animated gradient background */
+    .bg-gradient-animated {
+        background: linear-gradient(135deg,
+                hsl(200, 95%, 58%) 0%,
+                hsl(210, 90%, 52%) 50%,
+                hsl(200, 95%, 58%) 100%);
+        background-size: 200% 200%;
+        animation: gradientShift 3s ease infinite;
+    }
+
+    @keyframes gradientShift {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    /* Pulse glow animation for important elements */
+    .pulse-glow {
+        animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 12px hsla(200, 95%, 58%, 0.3);
+        }
+
+        50% {
+            box-shadow: 0 0 24px hsla(200, 95%, 58%, 0.5);
+        }
+    }
+
+    /* Shimmer effect for loading states */
+    .shimmer {
+        background: linear-gradient(90deg,
+                transparent,
+                hsla(200, 95%, 58%, 0.1),
+                transparent);
+        background-size: 200% 100%;
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    /* Badge with gradient */
+    .badge-gradient {
+        background: linear-gradient(135deg, hsl(200, 95%, 58%) 0%, hsl(210, 90%, 52%) 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Divider with gradient */
+    .divider-gradient {
+        height: 1px;
+        background: linear-gradient(90deg,
+                transparent,
+                hsl(200, 95%, 58%),
+                transparent);
+    }
+
+    /* Interactive card style */
+    .card-interactive {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .card-interactive:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px hsla(200, 95%, 58%, 0.15);
+    }
+
+    /* Success state with green-blue gradient */
+    .success-gradient {
+        background: linear-gradient(135deg, hsl(150, 70%, 50%) 0%, hsl(200, 95%, 58%) 100%);
+    }
+
+    /* Glass morphism effect */
+    .glass-effect {
+        background: hsla(var(--background), 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid hsla(200, 95%, 58%, 0.1);
+    }
+}
