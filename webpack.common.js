@@ -6,7 +6,7 @@ const webpack = require('webpack');
 module.exports = {
   entry: './src/index.tsx',
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'build'),
     filename: 'bundle.js', // Unique file name per build
     // chunkFilename: '[name].[contenthash].js', // Ensure chunks get unique names
     clean: true,
