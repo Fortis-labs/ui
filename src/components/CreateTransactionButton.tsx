@@ -10,6 +10,7 @@ import * as bs58 from 'bs58';
 import { Button } from './ui/button';
 import { useState } from 'react';
 import * as multisig_pda from '../../client/ts/pda';
+import * as multisig from '../../client/ts/generated';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Message, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { Input } from './ui/input';
@@ -116,11 +117,6 @@ const CreateTransaction = () => {
             Propose a transaction from a base58 encoded transaction message (not a transaction).
           </DialogDescription>
         </DialogHeader>
-
-        <div className="flex items-center gap-2 mb-2">
-          <p>Using Vault Index:</p>
-          <VaultSelector />
-        </div>
 
         <Input
           placeholder="Paste base58 encoded transaction..."
