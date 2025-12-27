@@ -18,7 +18,7 @@ export const simulateEncodedTransaction = async (
     console.log("message version", version);
     const transaction = new VersionedTransaction(message.compileToV0Message());
 
-    const keys = await getAccountsForSimulation(connection, transaction, version === 'legacy');
+    const keys = await getAccountsForSimulation(connection, transaction, message, version === 'legacy');
 
     toast.loading('Simulating...', {
       id: 'simulation',

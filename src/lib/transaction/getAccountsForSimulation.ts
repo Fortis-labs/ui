@@ -4,6 +4,8 @@ import {
   Connection,
   Message,
   SystemProgram,
+  Transaction,
+  TransactionMessage,
   VersionedMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
@@ -11,10 +13,12 @@ import {
 export async function getAccountsForSimulation(
   connection: Connection,
   tx: VersionedTransaction,
+  message: TransactionMessage,
   isLegacy: boolean
 ): Promise<string[]> {
   if (isLegacy) {
-    return (tx.message as Message)
+    const legacyMessage = message.compileToLegacyMessage();
+    return legacyMessage
       .nonProgramIds()
       .map((pubkey) => pubkey.toString())
       .filter((address) => address !== SystemProgram.programId.toString());
