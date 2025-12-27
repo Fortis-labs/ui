@@ -1,0 +1,613 @@
+{
+    "version": "0.1.0",
+    "name": "fortis_multisig",
+    "instructions": [
+        {
+            "name": "multisigCreate",
+            "docs": [
+                "Create a multisig."
+            ],
+            "accounts": [
+                {
+                    "name": "treasury",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The treasury where the creation fee is transferred to."
+                    ]
+                },
+                {
+                    "name": "multisig",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "createKey",
+                    "isMut": false,
+                    "isSigner": true,
+                    "docs": [
+                        "An ephemeral signer that is used as a seed for the Multisig PDA.",
+                        "Must be a signer to prevent front-running attack by someone else but the original creator."
+                    ]
+                },
+                {
+                    "name": "creator",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The creator of the multisig."
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false
+                }
+            ],
+            "args": [
+                {
+                    "name": "args",
+                    "type": {
+                        "defined": "MultisigCreateArgs"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ProposalCreate",
+            "docs": [
+                "Create a new proposal."
+            ],
+            "accounts": [
+                {
+                    "name": "multisig",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "transaction",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "creator",
+                    "isMut": false,
+                    "isSigner": true,
+                    "docs": [
+                        "The member of the multisig that is creating the transaction."
+                    ]
+                },
+                {
+                    "name": "proposal",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The proposal account associated with the transaction."
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false
+                }
+            ],
+            "args": [
+                {
+                    "name": "args",
+                    "type": {
+                        "defined": "ProposalCreateArgs"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ProposalExecute",
+            "docs": [
+                "Execute a proposal.",
+                "The proposal must be `Approved`."
+            ],
+            "accounts": [
+                {
+                    "name": "multisig",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "proposal",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The proposal account associated with the transaction."
+                    ]
+                },
+                {
+                    "name": "transaction",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The transaction to execute."
+                    ]
+                },
+                {
+                    "name": "member",
+                    "isMut": false,
+                    "isSigner": true
+                }
+            ],
+            "args": []
+        },
+        {
+            "name": "proposalApprove",
+            "docs": [
+                "Approve a multisig proposal on behalf of the `member`.",
+                "The proposal must be `Active`."
+            ],
+            "accounts": [
+                {
+                    "name": "multisig",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "proposal",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "member",
+                    "isMut": true,
+                    "isSigner": true
+                }
+            ],
+            "args": [
+                {
+                    "name": "args",
+                    "type": {
+                        "defined": "ProposalApproveArgs"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ProposalAccountsClose",
+            "docs": [
+                "Closes a `VaultTransaction` and the corresponding `Proposal`.",
+                "`transaction` can be closed if either:",
+                "- the `proposal` is in a terminal state: `Executed`.",
+                "- the `proposal` is stale and not `Approved`."
+            ],
+            "accounts": [
+                {
+                    "name": "multisig",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "proposal",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "the logic within `vault_transaction_accounts_close` does the rest of the checks."
+                    ]
+                },
+                {
+                    "name": "transaction",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "VaultTransaction corresponding to the `proposal`."
+                    ]
+                },
+                {
+                    "name": "rentCollector",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The rent collector."
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false
+                }
+            ],
+            "args": []
+        }
+    ],
+    "accounts": [
+        {
+            "name": "Multisig",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "createKey",
+                        "docs": [
+                            "Key that is used to seed the multisig PDA."
+                        ],
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "rentCollector",
+                        "docs": [
+                            "The address where the rent for the accounts related to executed, rejected, or cancelled",
+                            "transactions can be reclaimed. If set to `None`, the rent reclamation will be fortis treasury."
+                        ],
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "transactionIndex",
+                        "docs": [
+                            "Last transaction index. 0 means no transactions have been created."
+                        ],
+                        "type": "u64"
+                    },
+                    {
+                        "name": "threshold",
+                        "docs": [
+                            "Threshold for signatures."
+                        ],
+                        "type": "u16"
+                    },
+                    {
+                        "name": "bump",
+                        "docs": [
+                            "Bump for the multisig PDA seed."
+                        ],
+                        "type": "u8"
+                    },
+                    {
+                        "name": "members",
+                        "docs": [
+                            "Members of the multisig."
+                        ],
+                        "type": {
+                            "vec": "publicKey"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Proposal",
+            "docs": [
+                "Stores the data required for tracking the status of a multisig proposal.",
+                "Each `Proposal` has a 1:1 association with a transaction account, e.g. a `VaultTransaction` or a `ConfigTransaction`;",
+                "the latter can be executed only after the `Proposal` has been approved and its time lock is released."
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "multisig",
+                        "docs": [
+                            "The multisig this belongs to."
+                        ],
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "transactionIndex",
+                        "docs": [
+                            "Index of the multisig transaction this proposal is associated with."
+                        ],
+                        "type": "i64"
+                    },
+                    {
+                        "name": "timeStamp",
+                        "docs": [
+                            "Last time when proposal status was changed."
+                        ],
+                        "type": "i64"
+                    },
+                    {
+                        "name": "votingDeadline",
+                        "docs": [
+                            "Deadline to Vote."
+                        ],
+                        "type": "i64"
+                    },
+                    {
+                        "name": "status",
+                        "docs": [
+                            "The status of the proposal Active,Approved,Executed."
+                        ],
+                        "type": "u8"
+                    },
+                    {
+                        "name": "bump",
+                        "docs": [
+                            "PDA bump."
+                        ],
+                        "type": "u8"
+                    },
+                    {
+                        "name": "approved",
+                        "docs": [
+                            "Keys that have approved/signed."
+                        ],
+                        "type": {
+                            "vec": "publicKey"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "VaultTransaction",
+            "docs": [
+                "Stores data required for tracking the voting and execution status of a vault transaction.",
+                "Vault transaction is a transaction that's executed on behalf of the multisig vault PDA",
+                "and wraps arbitrary Solana instructions, typically calling into other Solana programs."
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "multisig",
+                        "docs": [
+                            "The multisig this belongs to."
+                        ],
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "creator",
+                        "docs": [
+                            "Member of the Multisig who submitted the transaction."
+                        ],
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "index",
+                        "docs": [
+                            "Index of this transaction within the multisig."
+                        ],
+                        "type": "u64"
+                    },
+                    {
+                        "name": "bump",
+                        "docs": [
+                            "bump for the transaction seeds."
+                        ],
+                        "type": "u8"
+                    },
+                    {
+                        "name": "vaultBump",
+                        "docs": [
+                            "Derivation bump of the vault PDA this transaction belongs to."
+                        ],
+                        "type": "u8"
+                    },
+                    {
+                        "name": "ephemeralSignerBumps",
+                        "docs": [
+                            "Derivation bumps for additional signers.",
+                            "Some transactions require multiple signers. Often these additional signers are \"ephemeral\" keypairs",
+                            "that are generated on the client with a sole purpose of signing the transaction and be discarded immediately after.",
+                            "When wrapping such transactions into multisig ones, we replace these \"ephemeral\" signing keypairs",
+                            "with PDAs derived from the MultisigTransaction's `transaction_index` and controlled by the Multisig Program;",
+                            "during execution the program includes the seeds of these PDAs into the `invoke_signed` calls,",
+                            "thus \"signing\" on behalf of these PDAs."
+                        ],
+                        "type": "bytes"
+                    },
+                    {
+                        "name": "message",
+                        "docs": [
+                            "data required for executing the transaction."
+                        ],
+                        "type": {
+                            "defined": "VaultTransactionMessage"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "types": [
+        {
+            "name": "MultisigCreateArgs",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "threshold",
+                        "docs": [
+                            "The number of signatures required to execute a transaction."
+                        ],
+                        "type": "u16"
+                    },
+                    {
+                        "name": "rentCollector",
+                        "docs": [
+                            "The address where the rent for the accounts related to executed, rejected, or cancelled",
+                            "transactions can be reclaimed. If set to `None`, the rent reclamation feature is turned off."
+                        ],
+                        "type": {
+                            "option": "publicKey"
+                        }
+                    },
+                    {
+                        "name": "members",
+                        "docs": [
+                            "The members of the multisig."
+                        ],
+                        "type": {
+                            "vec": "publicKey"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "ProposalApproveArgs",
+            "type": {
+                "kind": "struct",
+                "fields": []
+            }
+        },
+        {
+            "name": "ProposalCreateArgs",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "ephemeralSigners",
+                        "docs": [
+                            "Number of ephemeral signing PDAs required by the transaction."
+                        ],
+                        "type": "u8"
+                    },
+                    {
+                        "name": "votingDeadline",
+                        "docs": [
+                            "Deadline to Vote."
+                        ],
+                        "type": "i64"
+                    },
+                    {
+                        "name": "transactionMessage",
+                        "type": "bytes"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "VaultTransactionMessage",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "numSigners",
+                        "docs": [
+                            "The number of signer pubkeys in the account_keys vec."
+                        ],
+                        "type": "u8"
+                    },
+                    {
+                        "name": "numWritableSigners",
+                        "docs": [
+                            "The number of writable signer pubkeys in the account_keys vec."
+                        ],
+                        "type": "u8"
+                    },
+                    {
+                        "name": "numWritableNonSigners",
+                        "docs": [
+                            "The number of writable non-signer pubkeys in the account_keys vec."
+                        ],
+                        "type": "u8"
+                    },
+                    {
+                        "name": "accountKeys",
+                        "docs": [
+                            "Unique account pubkeys (including program IDs) required for execution of the tx.",
+                            "The signer pubkeys appear at the beginning of the vec, with writable pubkeys first, and read-only pubkeys following.",
+                            "The non-signer pubkeys follow with writable pubkeys first and read-only ones following.",
+                            "Program IDs are also stored at the end of the vec along with other non-signer non-writable pubkeys:",
+                            "",
+                            "```plaintext",
+                            "[pubkey1, pubkey2, pubkey3, pubkey4, pubkey5, pubkey6, pubkey7, pubkey8]",
+                            "|---writable---|  |---readonly---|  |---writable---|  |---readonly---|",
+                            "|------------signers-------------|  |----------non-singers-----------|",
+                            "```"
+                        ],
+                        "type": {
+                            "vec": "publicKey"
+                        }
+                    },
+                    {
+                        "name": "addressTableLookups",
+                        "docs": [
+                            "List of address table lookups used to load additional accounts",
+                            "for this transaction."
+                        ],
+                        "type": {
+                            "vec": {
+                                "defined": "MessageAddressTableLookup"
+                            }
+                        }
+                    },
+                    {
+                        "name": "instructions",
+                        "docs": [
+                            "List of instructions making up the tx."
+                        ],
+                        "type": {
+                            "vec": {
+                                "defined": "CompiledInstruction"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "CompiledInstruction",
+            "docs": [
+                "Concise serialization schema for instructions that make up a transaction."
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "programIdIndex",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "accountIndexes",
+                        "docs": [
+                            "Indices into the tx's `account_keys` list indicating which accounts to pass to the instruction."
+                        ],
+                        "type": "bytes"
+                    },
+                    {
+                        "name": "data",
+                        "docs": [
+                            "Instruction data."
+                        ],
+                        "type": "bytes"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "MessageAddressTableLookup",
+            "docs": [
+                "Address table lookups describe an on-chain address lookup table to use",
+                "for loading more readonly and writable accounts into a transaction."
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "accountKey",
+                        "docs": [
+                            "Address lookup table account key."
+                        ],
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "writableIndexes",
+                        "docs": [
+                            "List of indexes used to load writable accounts."
+                        ],
+                        "type": "bytes"
+                    },
+                    {
+                        "name": "readonlyIndexes",
+                        "docs": [
+                            "List of indexes used to load readonly accounts."
+                        ],
+                        "type": "bytes"
+                    }
+                ]
+            }
+        }
+    ],
+    "errors": [],
+    "metadata": {
+        "address": "2Zwsw5UBArhtKwGV3mQpGMaaH4q8hVDwEyzVjMqTyvgi",
+        "origin": "shank"
+    }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "client",
+  "type": "commonjs",
+  "main": "src/generated/index.ts",
+  "scripts": {
+    "test": "bun test --timeout 100000",
+    "gen-client": "bun run ./generate-client.ts"
+  },
+  "devDependencies": {
+    "@codama/nodes-from-anchor": "1.2.2",
+    "@codama/renderers": "^1.0.34",
+    "@codama/visitors-core": "^1.5.0",
+    "@types/bun": "latest",
+    "@types/jest": "^29.5.13",
+    "@types/node": "24.0.15",
+    "mocha": "^10.7.3",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@solana/compat": "^5.1.0",
+    "@solana/kit": "^5.1.0",
+    "@solana/web3.js": "^1.98.4",
+    "@types/mocha": "^10.0.9"
+  }
+}
