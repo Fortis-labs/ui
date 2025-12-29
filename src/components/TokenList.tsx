@@ -4,7 +4,7 @@ import SendTokens from './SendTokensButton';
 import SendSol from './SendSolButton';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useBalance, useGetTokens } from '../hooks/useServices';
-
+import DepositSol from './DepositSolButton';
 type TokenListProps = {
   multisigPda: string;
 };
@@ -34,7 +34,10 @@ export function TokenList({ multisigPda }: TokenListProps) {
                   Amount: {solBalance ? solBalance / LAMPORTS_PER_SOL : 0}
                 </p>
               </div>
-              <SendSol multisigPda={multisigPda} />
+              <div className="flex items-center gap-2">
+                <DepositSol multisigPda={multisigPda} />
+                <SendSol multisigPda={multisigPda} />
+              </div>
             </div>
           </div>
 

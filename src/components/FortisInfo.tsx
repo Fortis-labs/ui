@@ -48,7 +48,9 @@ export function FortisInfo({ }: FortisInfoProps) {
 
                         <div>
                             <p className="text-sm text-muted-foreground">Threshold</p>
-                            <p className="font-mono text-sm">{multisigConfig.threshold}</p>
+                            <p className="font-mono text-sm">
+                                {multisigConfig.threshold} / {multisigConfig.members.length}
+                            </p>
                         </div>
                     </div>
                 )}
