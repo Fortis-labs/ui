@@ -4,7 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { VaultSelector } from './VaultSelector';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useMultisig } from '../hooks/useServices';
+import { toast } from 'sonner';
+import { CopyIcon } from 'lucide-react';
 type FortisInfoProps = {};
+const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+};
 export function FortisInfo({ }: FortisInfoProps) {
     const { multisigVault: vaultAddress, multisigAddress } = useMultisigData();
     const { data: multisigConfig } = useMultisig();
@@ -26,12 +32,33 @@ export function FortisInfo({ }: FortisInfoProps) {
                 {/* Addresses */}
                 <div>
                     <p className="text-sm text-muted-foreground">Multisig Address</p>
-                    <p className="font-mono text-sm break-all">{multisigAddress}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="font-mono text-sm break-all flex-1">{multisigAddress}</p>
+                        <button
+                            type="button"
+                            onClick={() => copyToClipboard(multisigAddress, 'Multisig address')}
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            <CopyIcon className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
 
+                {/* Vault Address */}
                 <div>
                     <p className="text-sm text-muted-foreground">Vault Address</p>
-                    <p className="font-mono text-sm break-all">{vaultAddress?.toBase58()}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="font-mono text-sm break-all flex-1">{vaultAddress?.toBase58()}</p>
+                        {vaultAddress && (
+                            <button
+                                type="button"
+                                onClick={() => copyToClipboard(vaultAddress.toBase58(), 'Vault address')}
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                <CopyIcon className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Members & Threshold */}
