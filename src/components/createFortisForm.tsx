@@ -39,7 +39,7 @@ export default function CreateFortisForm({ }: {}) {
   const wallet = useWallet();
   const { publicKey, connected, sendTransaction } = useWallet();
 
-  const { connection, programId } = useMultisigData();
+  const { connection } = useMultisigData();
   const { setMultisigAddress } = useMultisigAddress();
   const validationRules = getValidationRules();
 
@@ -50,7 +50,6 @@ export default function CreateFortisForm({ }: {}) {
     {
       threshold: 1,
       rentCollector: '',
-      configAuthority: '',
       createKey: '',
       members: {
         count: 0,
@@ -110,97 +109,90 @@ export default function CreateFortisForm({ }: {}) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
+  const removeMember = (index: number) => {
+    handleChange("members", {
+      count: formState.values.members.count - 1,
+      memberData: formState.values.members.memberData.filter((_: PublicKey, idx: number) => idx !== index),
+    });
+  };
 
+  const updateMember = (index: number, value: string) => {
+    handleChange("members", {
+      count: formState.values.members.count,
+      memberData: formState.values.members.memberData.map((m: PublicKey, idx: number) => {
+        if (idx !== index) return m;
+        try {
+          return value ? new PublicKey(value) : null;
+        } catch {
+          return null;
+        }
+      }),
+    });
+  };
   return (
-    <>
-      <div className="grid grid-cols-8 gap-4 mb-6">
-        {/* Members input */}
-        <div className="col-span-6 space-y-2">
-          <label className="font-medium">
-            Members <span className="text-red-600">*</span>
-          </label>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <label className="font-medium">
+          Members <span className="text-red-600">*</span>
+        </label>
 
+        <div className="space-y-2">
           {formState.values.members.memberData.map((member: PublicKey, i: number) => (
-            <div key={i} className="relative flex items-center gap-2">
+            <div key={i} className="flex items-center gap-2">
               <Input
-                value={member ? member.toBase58() : ""}
+                value={member?.toBase58() ?? ""}
                 placeholder={`Member public key ${i + 1}`}
-                onChange={(e) => {
-                  handleChange("members", {
-                    count: formState.values.members.count,
-                    memberData: formState.values.members.memberData.map((m: PublicKey, idx: number) => {
-                      if (idx !== i) return m;
-
-                      try {
-                        return e.target.value
-                          ? new PublicKey(e.target.value)
-                          : null;
-                      } catch {
-                        return null;
-                      }
-                    }),
-                  });
-                }}
+                onChange={(e) => updateMember(i, e.target.value)}
               />
-
               {i > 0 && (
                 <XIcon
-                  onClick={() =>
-                    handleChange("members", {
-                      count: formState.values.members.count - 1,
-                      memberData: formState.values.members.memberData.filter(
-                        (_: PublicKey, idx: number) => idx !== i
-                      ),
-                    })
-                  }
+                  onClick={() => removeMember(i)}
                   className="w-4 h-4 cursor-pointer text-muted-foreground hover:text-foreground"
                 />
               )}
             </div>
           ))}
-
-          <button
-            onClick={(e) => handleAddMember(e)}
-            className="mt-2 flex gap-1 items-center text-zinc-400 hover:text-zinc-600"
-          >
-            <PlusCircleIcon className="w-4 h-4" />
-            Add member
-          </button>
-
-          {formState.errors.members && (
-            <p className="text-xs text-red-500">{formState.errors.members}</p>
-          )}
         </div>
 
-        {/* Threshold input */}
-        <div className="col-span-4 flex-col space-y-2">
+        <button
+          onClick={handleAddMember}
+          className="flex gap-1 items-center text-zinc-400 hover:text-zinc-600"
+        >
+          <PlusCircleIcon className="w-4 h-4" />
+          Add member
+        </button>
+
+        {formState.errors.members && (
+          <p className="text-xs text-red-500">{formState.errors.members}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
           <label htmlFor="threshold" className="font-medium">
             Threshold <span className="text-red-600">*</span>
           </label>
           <Input
             type="number"
-            placeholder="Approval threshold for execution"
+            placeholder="Approval threshold"
             defaultValue={formState.values.threshold}
             onChange={(e) => handleChange('threshold', parseInt(e.target.value))}
           />
           {formState.errors.threshold && (
-            <div className="mt-1.5 text-red-500 text-xs">{formState.errors.threshold}</div>
+            <p className="text-xs text-red-500">{formState.errors.threshold}</p>
           )}
         </div>
 
-        {/* Optional fields */}
-        <div className="col-span-4 flex-col space-y-2">
+        <div className="space-y-2">
           <label htmlFor="rentCollector" className="font-medium">
             Rent Collector
           </label>
           <Input
-            type="text"
             placeholder="Optional rent collector"
             defaultValue={formState.values.rentCollector}
             onChange={(e) => handleChange('rentCollector', e.target.value)}
           />
         </div>
-
       </div>
 
       <Button
@@ -217,7 +209,7 @@ export default function CreateFortisForm({ }: {}) {
                     <p className="font-semibold">
                       Fortis Created:{' '}
                       <span className="font-normal">
-                        {res.multisig.slice(0, 4) + '...' + res.multisig.slice(-4)}
+                        {res.multisig.slice(0, 4)}...{res.multisig.slice(-4)}
                       </span>
                     </p>
                     <p className="font-light">Your new Fortis has been set as active.</p>
@@ -229,7 +221,7 @@ export default function CreateFortisForm({ }: {}) {
                       navigator.clipboard.writeText(res.multisig);
                       toast.success('Copied address!');
                     }}
-                    className="w-4 h-4 hover:text-stone-500"
+                    className="w-4 h-4 cursor-pointer hover:text-stone-500"
                   />
                   <Link
                     to={`https://explorer.solana.com/address/${res.multisig}`}
@@ -247,11 +239,9 @@ export default function CreateFortisForm({ }: {}) {
       >
         Create Fortis
       </Button>
-    </>
-
+    </div>
   );
 }
-
 function getValidationRules(): ValidationRules {
   return {
 
@@ -281,6 +271,20 @@ function getValidationRules(): ValidationRules {
         let index = valid.findIndex((v) => v === 'Invalid Member Key');
         return `Member ${index + 1} is invalid`;
       }
+      //check for duplicated members
+      const seen = new Set<string>();
+
+      for (let i = 0; i < value.memberData.length; i++) {
+        const member = value.memberData[i];
+        if (!member) return `Member ${i + 1} is invalid`;
+
+        const key = member.toBase58();
+        if (!isPublickey(key)) return `Member ${i + 1} is invalid`;
+
+        if (seen.has(key)) return `Member ${i + 1} is duplicated`;
+        seen.add(key);
+      }
+
 
       return null;
     },
