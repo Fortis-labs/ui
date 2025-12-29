@@ -4,7 +4,7 @@ export type Network = 'mainnet' | 'devnet' | 'custom';
 
 // ✅ Fixed: no trailing spaces
 const MAINNET_RPC = 'https://mainnet.helius-rpc.com/?api-key=64096058-650d-4e15-99cd-842c236765ef';
-const DEVNET_RPC = 'https://api.devnet.solana.com';
+const DEVNET_RPC = 'https://devnet.helius-rpc.com/?api-key=64096058-650d-4e15-99cd-842c236765ef';
 
 export function resolveRpc(network: Network, customRpc?: string): string {
     if (network === 'custom' && customRpc) {
