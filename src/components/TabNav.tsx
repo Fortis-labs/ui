@@ -11,7 +11,7 @@ export default function TabNav() {
 
   const tabs = [
     { name: 'Create Fortis', icon: <Plus className="h-5 w-5" />, route: '/create' },
-    { name: 'Home', icon: <LucideHome className="h-5 w-5" />, route: '/' },
+    { name: 'Home', icon: <LucideHome className="h-5 w-5" />, route: '/home' },
     { name: 'Transactions', icon: <ArrowDownUp className="h-5 w-5" />, route: '/transactions' },
     { name: 'Programs', icon: <Box className="h-5 w-5" />, route: '/programs' },
   ];

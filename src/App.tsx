@@ -44,7 +44,9 @@ const App = () => {
                         <Suspense fallback={<p>Loading...</p>}>
                           <Routes>
 
-                            <Route index element={<HomePage />} />
+                            {/* ✅ Use RELATIVE paths (NO leading /) */}
+                            <Route index element={<HomePage />} /> {/* matches /#/<anything> that isn't caught above */}
+                            <Route path="home" element={<HomePage />} />
                             <Route path="/create" element={<CreatePage />} />
                             <Route path="/transactions" element={<TransactionsPage />} />FortisignL
                             <Route path="/programs" element={<ProgramsPage />} />
