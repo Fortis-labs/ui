@@ -33,15 +33,15 @@ export const useMultisig = () => {
   });
 };
 
-export const useBalance = () => {
-  const { connection, multisigVault, rpcUrl } = useMultisigData();
+export const useBalance = (address: PublicKey | null) => {
+  const { connection, rpcUrl } = useMultisigData();
 
   return useSuspenseQuery({
-    queryKey: ['balance', multisigVault?.toBase58(), rpcUrl],
+    queryKey: ['balance', address?.toBase58(), rpcUrl],
     queryFn: async () => {
-      if (!multisigVault) return null;
+      if (!address) return 0;
       try {
-        return connection.getBalance(multisigVault);
+        return connection.getBalance(address);
       } catch (error) {
         console.error(error);
         return null;
@@ -50,18 +50,19 @@ export const useBalance = () => {
   });
 };
 
-export const useGetTokens = () => {
-  const { connection, multisigVault, rpcUrl } = useMultisigData();
+export const useGetTokens = (address: PublicKey | null) => {
+
+  const { connection, rpcUrl } = useMultisigData();
 
   return useSuspenseQuery({
-    queryKey: ['tokenBalances', multisigVault?.toBase58(), rpcUrl],
+    queryKey: ['tokenBalances', address?.toBase58(), rpcUrl],
     queryFn: async () => {
-      if (!multisigVault) return null;
+      if (!address) return 0;
       try {
-        const classicTokens = await connection.getParsedTokenAccountsByOwner(multisigVault, {
+        const classicTokens = await connection.getParsedTokenAccountsByOwner(address, {
           programId: TOKEN_PROGRAM_ID,
         });
-        const t22Tokens = await connection.getParsedTokenAccountsByOwner(multisigVault, {
+        const t22Tokens = await connection.getParsedTokenAccountsByOwner(address, {
           programId: TOKEN_2022_PROGRAM_ID,
         });
         return classicTokens.value.concat(t22Tokens.value);

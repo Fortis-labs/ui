@@ -5,14 +5,61 @@ import SendSol from './SendSolButton';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useBalance, useGetTokens } from '../hooks/useServices';
 import DepositSol from './DepositSolButton';
+import { AssetOption } from './DepositDialog';
+import { useWallet } from '@solana/wallet-adapter-react';
 type TokenListProps = {
   multisigPda: string;
 };
-
+interface ParsedTokenAccount {
+  mint: string;
+  tokenAmount: {
+    uiAmount: number;
+    amount: string;
+    decimals: number;
+  };
+}
 export function TokenList({ multisigPda }: TokenListProps) {
-  const { programId } = useMultisigData();
-  const { data: solBalance = 0 } = useBalance();
-  const { data: tokens = null } = useGetTokens();
+  const { programId, multisigVault } = useMultisigData();
+  const { publicKey } = useWallet();
+  const { data: usersolBalance = 0 } = useBalance(publicKey);
+  const { data: usertokens = null } = useGetTokens(publicKey);
+  const isParsedTokenAccount = (data: any): data is { parsed: { info: ParsedTokenAccount; type: string } } => {
+    return (
+      data &&
+      data.parsed &&
+      data.parsed.info &&
+      typeof data.parsed.info.mint === 'string' &&
+      data.parsed.info.tokenAmount &&
+      typeof data.parsed.info.tokenAmount.uiAmount === 'number' &&
+      typeof data.parsed.info.tokenAmount.decimals === 'number'
+    );
+  };
+  const assetOptions: AssetOption[] = [];
+
+  // Add SOL (only if vault exists)
+  if (multisigVault) {
+    assetOptions.push({
+      mint: 'So11111111111111111111111111111111111111112',
+      balance: usersolBalance ? usersolBalance / LAMPORTS_PER_SOL : 0,
+      decimals: 9,
+      tokenAccount: undefined,
+    });
+  }
+
+  // Add SPL tokens
+  if (usertokens) {
+    for (const token of usertokens) {
+      if (isParsedTokenAccount(token.account.data)) {
+        const info = token.account.data.parsed.info;
+        assetOptions.push({
+          mint: info.mint,
+          balance: info.tokenAmount.uiAmount ?? 0,
+          decimals: info.tokenAmount.decimals,
+          tokenAccount: token.pubkey.toBase58(),
+        });
+      }
+    }
+  }
 
   return (
     <Card className="hover:shadow-[0_8px_24px_hsla(200,95%,58%,0.12)] transition-all duration-300">
