@@ -21,8 +21,8 @@ interface ParsedTokenAccount {
 export function TokenList({ multisigPda }: TokenListProps) {
   const { programId, multisigVault } = useMultisigData();
   const { publicKey } = useWallet();
-  const { data: usersolBalance = 0 } = useBalance(publicKey);
-  const { data: usertokens = null } = useGetTokens(publicKey);
+  const { data: solBalance = 0 } = useBalance(multisigVault);
+  const { data: tokens = null } = useGetTokens(multisigVault);
   const isParsedTokenAccount = (data: any): data is { parsed: { info: ParsedTokenAccount; type: string } } => {
     return (
       data &&
@@ -40,15 +40,15 @@ export function TokenList({ multisigPda }: TokenListProps) {
   if (multisigVault) {
     assetOptions.push({
       mint: 'So11111111111111111111111111111111111111112',
-      balance: usersolBalance ? usersolBalance / LAMPORTS_PER_SOL : 0,
+      balance: solBalance ? solBalance / LAMPORTS_PER_SOL : 0,
       decimals: 9,
       tokenAccount: undefined,
     });
   }
 
   // Add SPL tokens
-  if (usertokens) {
-    for (const token of usertokens) {
+  if (tokens) {
+    for (const token of tokens) {
       if (isParsedTokenAccount(token.account.data)) {
         const info = token.account.data.parsed.info;
         assetOptions.push({
