@@ -29,7 +29,7 @@ interface NetworkContextType {
 const NetworkContext = createContext<NetworkContextType | undefined>(undefined);
 
 export const NetworkProvider = ({ children }: { children: ReactNode }) => {
-    const [network, setNetwork] = useState<Network>('devnet');
+    const [network, setNetwork] = useState<Network>('mainnet');
     const [customRpc, setCustomRpc] = useState('');
 
     const rpcUrl = useMemo(() => resolveRpc(network, customRpc), [network, customRpc]);
