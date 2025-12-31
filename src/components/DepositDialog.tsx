@@ -7,7 +7,8 @@ import {
     DialogTrigger,
 } from '../components/ui/dialog';
 import { Button } from './ui/button';
-import { Select, SelectValue, SelectTrigger, SelectContent, SelectItem } from '@radix-ui/react-select';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/ui/select';
+//import { Select, SelectValue, SelectTrigger, SelectContent, SelectItem } from '@radix-ui/react-select';
 import { useState } from 'react';
 import * as multisig_ixs from '../../client/ts/instructions';
 import * as multisig_pda from '../../client/ts/pda';
@@ -35,21 +36,22 @@ import { useMultisigData } from '../hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAccess } from '../hooks/useAccess';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
-import { Label } from '@radix-ui/react-select';
+//import { Label } from '@radix-ui/react-select';
+
 export type AssetOption = {
     mint: string;
     balance: number;
     decimals: number;
-    tokenAccount: string | undefined;
+    tokenAccount: string | undefined; //for sol the value will be undefined 
 };
 
 type DepositDialogProps = {
     multisigPda: string;
     assetOptions: AssetOption[];
-    programId: string;
 };
 
 export function DepositDialog({ multisigPda, assetOptions }: DepositDialogProps) {
+    // console.log('DepositDialog assetOptions:', assetOptions);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedMint, setSelectedMint] = useState(assetOptions[0]?.mint || '');
     const [amount, setAmount] = useState('');
@@ -78,12 +80,15 @@ export function DepositDialog({ multisigPda, assetOptions }: DepositDialogProps)
                     lamports,
                 });
                 const tx = new Transaction().add(ix);
-                signature = signature = await wallet.sendTransaction(tx, connection, {
+                signature = await wallet.sendTransaction(tx, connection, {
                     skipPreflight: true,
                 });
             } else {
                 // SPL Token deposit
                 const mintPubkey = new PublicKey(selectedAsset.mint);
+                if (!selectedAsset.tokenAccount) {
+                    throw new Error('Token account missing for SPL deposit');
+                }
                 const sourceTokenAccount = new PublicKey(selectedAsset.tokenAccount!);
                 const vaultPubkey = new PublicKey(vaultAddress);
                 const mintAccountInfo = await connection.getAccountInfo(new PublicKey(selectedAsset.mint));
@@ -99,7 +104,8 @@ export function DepositDialog({ multisigPda, assetOptions }: DepositDialogProps)
                     wallet.publicKey,
                     vaultATA,
                     vaultPubkey,
-                    mintPubkey, TOKEN_PROGRAM
+                    mintPubkey,
+                    TOKEN_PROGRAM
                 );
 
                 const amountAsBigInt = BigInt(
@@ -118,7 +124,7 @@ export function DepositDialog({ multisigPda, assetOptions }: DepositDialogProps)
 
 
                 const tx = new Transaction().add(createVaultATAIx, transferIx);
-                signature = signature = await wallet.sendTransaction(tx, connection, {
+                signature = await wallet.sendTransaction(tx, connection, {
                     skipPreflight: true,
                 });
             }
@@ -171,12 +177,16 @@ export function DepositDialog({ multisigPda, assetOptions }: DepositDialogProps)
 
                 <div className="space-y-4">
                     <div>
-                        <Label>Asset</Label>
+                        <label className="text-sm font-medium text-foreground">Asset</label>
                         <Select value={selectedMint} onValueChange={setSelectedMint}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select asset" />
+                            <SelectTrigger className="text-foreground bg-background border border-input h-10 px-3 py-2 w-full">
+                                <SelectValue placeholder="Select asset" className="text-foreground" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent
+                                side="bottom"       // ✅ Force dropdown to open downward
+                                align="start"       // optional: aligns the dropdown with the trigger
+                                className=""        // let viewport handle scrolling if needed
+                            >
                                 {assetOptions.map((asset) => (
                                     <SelectItem key={asset.mint} value={asset.mint}>
                                         {asset.mint === 'So11111111111111111111111111111111111111112'
@@ -189,9 +199,9 @@ export function DepositDialog({ multisigPda, assetOptions }: DepositDialogProps)
                     </div>
 
                     <div>
-                        <Label>
-                            Amount (Max: {selectedAsset?.balance ? selectedAsset.balance.toFixed(6) : '0'})
-                        </Label>
+                        <label>
+                            Amount (Max: {selectedAsset?.balance ? selectedAsset.balance.toFixed(4) : '0'})
+                        </label>
                         <Input
                             type="number"
                             step="any"
@@ -223,6 +233,6 @@ export function DepositDialog({ multisigPda, assetOptions }: DepositDialogProps)
                     </Button>
                 </div>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

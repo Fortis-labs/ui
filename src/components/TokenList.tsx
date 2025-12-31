@@ -7,6 +7,11 @@ import { useBalance, useGetTokens } from '../hooks/useServices';
 import DepositSol from './DepositSolButton';
 import { AssetOption } from './DepositDialog';
 import { useWallet } from '@solana/wallet-adapter-react';
+import {
+  DepositDialog
+
+} from './DepositDialog';
+import { WithdrawDialog } from './WithdrawDialog';
 type TokenListProps = {
   multisigPda: string;
 };
@@ -18,11 +23,15 @@ interface ParsedTokenAccount {
     decimals: number;
   };
 }
+const SOL_MINT = 'So11111111111111111111111111111111111111112';
+
 export function TokenList({ multisigPda }: TokenListProps) {
   const { programId, multisigVault } = useMultisigData();
   const { publicKey } = useWallet();
   const { data: solBalance = 0 } = useBalance(multisigVault);
   const { data: tokens = null } = useGetTokens(multisigVault);
+  const { data: usersolBalance = 0 } = useBalance(publicKey);
+  const { data: usertokens = null } = useGetTokens(publicKey);
   const isParsedTokenAccount = (data: any): data is { parsed: { info: ParsedTokenAccount; type: string } } => {
     return (
       data &&
@@ -35,12 +44,21 @@ export function TokenList({ multisigPda }: TokenListProps) {
     );
   };
   const assetOptions: AssetOption[] = [];
+  const userassetOptions: AssetOption[] = [];
 
   // Add SOL (only if vault exists)
   if (multisigVault) {
     assetOptions.push({
-      mint: 'So11111111111111111111111111111111111111112',
+      mint: SOL_MINT,
       balance: solBalance ? solBalance / LAMPORTS_PER_SOL : 0,
+      decimals: 9,
+      tokenAccount: undefined,
+    });
+  }
+  if (publicKey) {
+    userassetOptions.push({
+      mint: SOL_MINT,
+      balance: usersolBalance ? usersolBalance / LAMPORTS_PER_SOL : 0,
       decimals: 9,
       tokenAccount: undefined,
     });
@@ -51,6 +69,7 @@ export function TokenList({ multisigPda }: TokenListProps) {
     for (const token of tokens) {
       if (isParsedTokenAccount(token.account.data)) {
         const info = token.account.data.parsed.info;
+        if (info.mint === SOL_MINT) continue; // 🔥 Skip SOL
         assetOptions.push({
           mint: info.mint,
           balance: info.tokenAmount.uiAmount ?? 0,
@@ -60,64 +79,80 @@ export function TokenList({ multisigPda }: TokenListProps) {
       }
     }
   }
+  // Add SPL tokens
+  if (usertokens) {
+    for (const token of usertokens) {
+      if (isParsedTokenAccount(token.account.data)) {
+        const info = token.account.data.parsed.info;
+        if (info.mint === SOL_MINT) continue; // 🔥 Skip SOL
+        userassetOptions.push({
+          mint: info.mint,
+          balance: info.tokenAmount.uiAmount ?? 0,
+          decimals: info.tokenAmount.decimals,
+          tokenAccount: token.pubkey.toBase58(),
+        });
+      }
+    }
+  }
+  console.log("num of user assets", userassetOptions.length);
+  console.log("num of vault assets", assetOptions.length);
 
   return (
     <Card className="hover:shadow-[0_8px_24px_hsla(200,95%,58%,0.12)] transition-all duration-300">
-      <CardHeader>
-        <CardTitle className="text-gradient text-2xl">Tokens</CardTitle>
-        <CardDescription>The tokens you hold in your wallet</CardDescription>
+      <CardHeader className="flex flex-row flex-wrap justify-between items-start gap-4">
+        <div>
+          <CardTitle className="text-gradient text-2xl">Tokens</CardTitle>
+          <CardDescription>The tokens you hold in your wallet</CardDescription>
+        </div>
+        <div className="flex gap-2">
+          <DepositDialog
+            multisigPda={multisigPda}
+            assetOptions={userassetOptions}
+          />
+          <WithdrawDialog
+            multisigPda={multisigPda}
+            assetOptions={assetOptions}
+          />
+        </div>
       </CardHeader>
+
       <CardContent>
         <div className="space-y-6">
-          {/* SOL Balance with gradient accent */}
-          <div className="p-4 rounded-lg border border-border hover:border-[hsl(200,95%,58%)] transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-gradient-to-br from-[hsl(200,95%,58%)] to-[hsl(210,90%,52%)]"></span>
-                  SOL
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Amount: {solBalance ? solBalance / LAMPORTS_PER_SOL : 0}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <DepositSol multisigPda={multisigPda} />
-                <SendSol multisigPda={multisigPda} />
-              </div>
+          {/* SOL Balance */}
+          <div className="p-4 rounded-lg border border-border">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-gradient-to-br from-[hsl(200,95%,58%)] to-[hsl(210,90%,52%)]"></span>
+                SOL
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Amount: {solBalance ? (solBalance / LAMPORTS_PER_SOL).toFixed(4) : 0}
+              </p>
             </div>
           </div>
 
-          {/* Token List with enhanced styling */}
+          {/* Token List */}
           {tokens && tokens.length > 0 && (
             <div className="space-y-4">
               <div className="divider-gradient"></div>
-              {tokens.map((token) => (
-                <div
-                  key={token.account.data.parsed.info.mint}
-                  className="p-4 rounded-lg border border-border hover:border-[hsl(200,95%,58%)] transition-all duration-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1 flex-1 min-w-0">
+              {tokens.map((token) => {
+                const info = token.account.data.parsed.info;
+                return (
+                  <div
+                    key={info.mint}
+                    className="p-4 rounded-lg border border-border"
+                  >
+                    <div className="space-y-1">
                       <p className="text-sm font-medium truncate">
-                        Mint: {token.account.data.parsed.info.mint}
+                        Mint: {info.mint}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Amount: {token.account.data.parsed.info.tokenAmount.uiAmount}
+                        Amount: {info.tokenAmount.uiAmount ?? 0}
                       </p>
                     </div>
-                    <div className="ml-4 flex-shrink-0">
-                      <SendTokens
-                        mint={token.account.data.parsed.info.mint}
-                        tokenAccount={token.pubkey.toBase58()}
-                        decimals={token.account.data.parsed.info.tokenAmount.decimals}
-                        multisigPda={multisigPda}
-                        programId={programId.toBase58()}
-                      />
-                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
