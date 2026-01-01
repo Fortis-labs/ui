@@ -2,7 +2,6 @@ import React, { Suspense } from 'react';
 import { Wallet } from './components/Wallet';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { QueryClient } from '@tanstack/react-query';
-import { AlertTriangle, CheckSquare } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
 import TabNav from './components/TabNav';
 
@@ -10,14 +9,15 @@ import HomePage from './routes/_index';
 import CreatePage from './routes/create';
 import TransactionsPage from './routes/transactions';
 import ProgramsPage from './routes/programs';
-import { Routes, Route, HashRouter } from 'react-router-dom';
-
-import './styles/global.css'; // ✅ Load Tailwind styles
+import { Routes, Route, Navigate, HashRouter } from 'react-router-dom';
+import './styles/global.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { NetworkProvider } from './hooks/useNetwork';
 import FortisignLanding from './routes/landing';
 import { Helmet } from "react-helmet";
+
 const queryClient = new QueryClient();
+
 const App = () => {
   return (
     <>
@@ -29,16 +29,18 @@ const App = () => {
         />
       </Helmet>
 
-
       <NetworkProvider>
         <QueryClientProvider client={queryClient}>
           <Wallet>
             <HashRouter>
               <Routes>
+                {/* ✅ Marketing / Public Pages */}
                 <Route path="/" element={<FortisignLanding />} />
                 <Route path="/landing" element={<FortisignLanding />} />
+
+                {/* ✅ App Pages — only under /app */}
                 <Route
-                  path="/*"
+                  path="/app/*"
                   element={
                     <div className="dark flex h-screen min-w-full flex-col bg-background md:flex-row">
                       <Suspense>
@@ -53,7 +55,7 @@ const App = () => {
                               <Route path="create" element={<CreatePage />} />
                               <Route path="transactions" element={<TransactionsPage />} />
                               <Route path="programs" element={<ProgramsPage />} />
-                              <Route path="*" element={<p>404 - Not Found</p>} />
+                              <Route path="*" element={<Navigate to="/app" replace />} />
                             </Routes>
                           </Suspense>
                         </ErrorBoundary>
@@ -61,6 +63,10 @@ const App = () => {
                     </div>
                   }
                 />
+
+
+                {/* 404 for everything else */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
               <Toaster expand visibleToasts={3} />
             </HashRouter>
