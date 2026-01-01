@@ -23,7 +23,6 @@
     <meta property="og:title" content="Fortis - Secure Solana Multisig Wallet for DAOs & Teams">
     <meta property="og:description"
         content="Security-first Solana multisig protecting treasuries from blind signing and address poisoning. Built for DAOs, DeFi protocols, and Web3 teams.">
-    <!-- Fallback OG image: replace with your own when available -->
     <meta property="og:image" content="https://avatars.githubusercontent.com/u/248301879?s=1200&v=4">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -92,9 +91,44 @@
 </head>
 
 <body>
-    <div id="root"></div>
+    <!-- Root for React app -->
+    <div id="root">
+        <!-- SEO-friendly fallback content (visible to crawlers & non-JS users) -->
+        <div
+            style="font-family:system-ui, -apple-system, sans-serif; padding:2rem; max-width:800px; margin:auto; color:#0f172a; line-height:1.6;">
+            <h1>Fortis — Secure Solana Multisig</h1>
+            <p>Fortis is a <strong>security-first multisig</strong>, built for Solana’s high-stake workflows. With
+                Fortis, teams can deploy a multisig with a single click, create proposals for initiatives, vote
+                securely, and execute decisions collectively.</p>
+            <p>Our goal in building Fortis is to deliver a secure solution that actively mitigates common attack vectors
+                such as <strong>blind signing</strong> and <strong>address poisoning</strong>.</p>
+            <p>Fortis leverages Solana’s decentralized infrastructure. All multisig rules, workflows, and security
+                guarantees are enforced transparently by Fortis Labs and Solana’s network of over 1,000 global
+                validators.</p>
+            <p><a href="/create" style="color:#3B82F6; font-weight:bold; text-decoration:underline;">Create your
+                    multisig</a></p>
+        </div>
+    </div>
 
-    <!-- Hidden SEO Content (accessible-friendly hiding) -->
+    <!-- noscript fallback (for users with JS disabled) -->
+    <noscript>
+        <div
+            style="font-family:system-ui, -apple-system, sans-serif; padding:2rem; max-width:800px; margin:auto; color:#0f172a; line-height:1.6;">
+            <h1>Fortis — Secure Solana Multisig</h1>
+            <p>Fortis is a <strong>security-first multisig</strong>, built for Solana’s high-stake workflows. With
+                Fortis, teams can deploy a multisig with a single click, create proposals for initiatives, vote
+                securely, and execute decisions collectively.</p>
+            <p>Our goal in building Fortis is to deliver a secure solution that actively mitigates common attack vectors
+                such as <strong>blind signing</strong> and <strong>address poisoning</strong>.</p>
+            <p>Fortis leverages Solana’s decentralized infrastructure. All multisig rules, workflows, and security
+                guarantees are enforced transparently by Fortis Labs and Solana’s network of over 1,000 global
+                validators.</p>
+            <p><a href="/create" style="color:#3B82F6; font-weight:bold; text-decoration:underline;">Create your
+                    multisig</a></p>
+        </div>
+    </noscript>
+
+    <!-- Hidden SEO content (reinforces semantic structure) -->
     <div aria-hidden="true"
         style="position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden;">
         <h1>Fortis - Solana Multisig Wallet</h1>

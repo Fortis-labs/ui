@@ -29,10 +29,6 @@ const App = () => {
         />
       </Helmet>
 
-      <div>
-        <h1>Secure Solana Multisig for High-Stake Treasuries</h1>
-        <p>Fortis is a security-first multisig wallet built on Solana...</p>
-      </div>
 
       <NetworkProvider>
         <QueryClientProvider client={queryClient}>
